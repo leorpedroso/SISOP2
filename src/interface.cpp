@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <signal.h>
 
 void Interface::run(){
     std::string input;
@@ -11,6 +12,10 @@ void Interface::run(){
 
     while(true){
         getline(std::cin, input);
+        if(std::cin.eof()){
+            break;
+        }
+
         bool valid = parseString(input, command, arg);
 
         if (valid){
@@ -31,6 +36,8 @@ void Interface::run(){
             std::cout << "Invalid command." << std::endl;
         }
     }
+
+    raise(SIGINT);
 }
 
 bool Interface::parseString(const std::string &input, std::string &command, std::string &arg){
