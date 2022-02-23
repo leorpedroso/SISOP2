@@ -18,7 +18,7 @@ Test::Test() {
 
 bool Test::send(std::string msg) {
     std::this_thread::sleep_for (std::chrono::seconds(rand() % SEND_WAIT));
-    std::cout << "Sending message: " << msg << std::endl;
+    std::cout << "Client --> Received message: " << msg << std::endl;
     return true;
 } 
 
@@ -30,7 +30,8 @@ std::string Test::receive(int timeout) {
         msg = "";
     } else {
         std::this_thread::sleep_for (std::chrono::seconds(sleep_time));
-        msg = "Message received";
+        msg = "client msg";
+        std::cout << "Client --> Sending message: " << msg << std::endl;
     }
     return msg;
 }
