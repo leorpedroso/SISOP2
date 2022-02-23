@@ -17,9 +17,8 @@ SessionManager::SessionManager() {
 }
 
 bool SessionManager::_session_closed() {
-    session_mtx.lock();
+    std::unique_lock<std::mutex> lck(session_mtx);
     bool return_val = session_closed;
-    session_mtx.unlock();
     return return_val;
 }
 
@@ -32,34 +31,30 @@ void SessionManager::_listen() {
 
 void SessionManager::_send() {
     while(1) {
-        send_mtx.lock();
+        std::unique_lock<std::mutex> lck(send_mtx);
         if (should_send) sent = test_obj.send(msg_send);
         should_send = false;
-        send_mtx.unlock();
 
         if (_session_closed()) break;
     }
 }
 
 void SessionManager::send(std::string msg) {
-    send_mtx.lock(); 
+    std::unique_lock<std::mutex> lck(send_mtx);
     should_send = true;
     sent = false;
     msg_send = msg;
-    send_mtx.unlock();
 }
 
 bool SessionManager::msg_sent() {
-    send_mtx.lock();
+    std::unique_lock<std::mutex> lck(send_mtx);
     bool confirm = !should_send && sent;
-    send_mtx.unlock();
     return confirm;
 }
 
 bool SessionManager::close() {
-    session_mtx.lock();
+    std::unique_lock<std::mutex> lck(session_mtx);
     session_closed = true;
-    session_mtx.unlock();
 }
 
 std::string SessionManager::read_buffer() {
