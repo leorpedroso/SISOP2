@@ -1,4 +1,4 @@
-#include "../include/interface.hpp"
+#include "../../include/client/interface.hpp"
 #include <iostream>
 #include <string>
 #include <sstream>

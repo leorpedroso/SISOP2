@@ -1,5 +1,5 @@
 
-#include "../include/notificationmanagerclient.hpp"
+#include "../../include/client/notificationmanagerclient.hpp"
 #include <unistd.h>
 
 void NotificationManager::listen(){
