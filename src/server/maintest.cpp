@@ -26,7 +26,12 @@ int main() {
         }
     }
 
-    std::this_thread::sleep_for (std::chrono::seconds(30));
+    for (int i = 0; i < 1500000; i++) {
+        string msg_receive = session.read_buffer();
+        if(msg_receive.compare("") != 0) {
+            cout << "Server --> Received message: " << msg_receive << endl;
+        }
+    }
     session.close();
     while(1) {
         cout << "Server --> Infinite loop" << endl;

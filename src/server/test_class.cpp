@@ -14,6 +14,7 @@
 
 Test::Test() {
     srand(time(NULL));
+    counter = 0;
 }
 
 bool Test::send(std::string msg) {
@@ -23,14 +24,14 @@ bool Test::send(std::string msg) {
 } 
 
 std::string Test::receive(int timeout) {
-    std::string msg;
+    std::string msg = "";
     int sleep_time = rand() % RECEIVE_WAIT;
     if (sleep_time > timeout) {
-        std::this_thread::sleep_for (std::chrono::seconds(sleep_time));
-        msg = "";
+        std::this_thread::sleep_for (std::chrono::seconds(timeout));
     } else {
         std::this_thread::sleep_for (std::chrono::seconds(sleep_time));
-        msg = "client msg";
+        msg = "client msg " + std::to_string(counter);
+        counter++;
         std::cout << "Client --> Sending message: " << msg << std::endl;
     }
     return msg;

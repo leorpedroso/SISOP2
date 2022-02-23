@@ -1,7 +1,7 @@
-#include <iostream>
 #include <string>
 #include <thread>
 #include <mutex>
+#include <chrono>
 
 #include "../../../include/server/profile_management/session_manager.hpp"
 #include "../../../include/server/test_class.hpp"
@@ -24,8 +24,14 @@ bool SessionManager::_session_closed() {
 
 void SessionManager::_listen() {
     while(1) {
-        // TODO producer-consumer logic
         if (_session_closed()) break;
+
+        std::string msg_receive = test_obj.receive(LISTEN_TIMEOUT);    
+        if (msg_receive.compare("") != 0) {
+            std::unique_lock<std::mutex> lck(listen_mtx);
+            buffer.push(msg_receive);
+            listen_cv.notify_one();
+        }
     }
 }
 
@@ -58,6 +64,10 @@ bool SessionManager::close() {
 }
 
 std::string SessionManager::read_buffer() {
-    // TODO producer-consumer logic
-    return "";
+    std::unique_lock<std::mutex> lck(listen_mtx);
+    if (listen_cv.wait_for(lck, std::chrono::microseconds(2), [this]{return !buffer.empty();}) == false)
+        return "";
+    std::string msg_buffer = buffer.front();
+    buffer.pop();
+    return msg_buffer;
 }
