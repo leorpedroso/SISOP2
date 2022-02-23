@@ -11,7 +11,7 @@ void Profile::putNotification(const Notification &notification){
     notificationsMutex->lock();
 
     notifications.push(notification);
-    notEmpty->notify_one();
+    notEmpty->notify_all();
 
     notificationsMutex->unlock();
 }
