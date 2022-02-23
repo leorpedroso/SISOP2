@@ -1,32 +1,43 @@
 
+OBJDIR = obj
+MODULES := server client
 
+OBJDIRS := $(patsubst %, $(OBJDIR)/%, $(MODULES))
 
-all: client server
+all: client serverManagerTest
 
-client: obj/notificationmanagerclient.o obj/interface.o obj/mainclient.o 
-	g++ -o client obj/mainclient.o obj/interface.o obj/notificationmanagerclient.o -pthread
+client: obj/client/notificationmanagerclient.o obj/client/interface.o obj/client/mainclient.o 
+	g++ -o client obj/client/mainclient.o obj/client/interface.o obj/client/notificationmanagerclient.o -pthread
 
-obj/notificationmanagerclient.o: src/notificationmanagerclient.cpp 
-	g++ -c -o obj/notificationmanagerclient.o src/notificationmanagerclient.cpp
+obj/client/notificationmanagerclient.o: builddirs src/client/notificationmanagerclient.cpp 
+	g++ -c -o obj/client/notificationmanagerclient.o src/client/notificationmanagerclient.cpp
 
-obj/interface.o: src/interface.cpp
-	g++ -c -o obj/interface.o src/interface.cpp
+obj/client/interface.o: builddirs src/client/interface.cpp
+	g++ -c -o obj/client/interface.o src/client/interface.cpp
 
-obj/mainclient.o: src/mainclient.cpp
-	g++ -c -o obj/mainclient.o src/mainclient.cpp -pthread
+obj/client/mainclient.o: builddirs src/client/mainclient.cpp
+	g++ -c -o obj/client/mainclient.o src/client/mainclient.cpp -pthread
 
-server: obj/notificationmanagerserver.o obj/profilemanager.o obj/mainserver.o 
-	g++ -o server obj/mainserver.o obj/profilemanager.o obj/notificationmanagerserver.o -pthread
+serverManagerTest: obj/server/notification.o obj/server/profile.o obj/server/profilemanager.o obj/server/mainserver.o 
+	g++ -o server obj/server/mainserver.o obj/server/profilemanager.o obj/server/notification.o obj/server/profile.o -pthread
 
-obj/notificationmanagerserver.o: src/notificationmanagerserver.cpp 
-	g++ -c -o obj/notificationmanagerserver.o src/notificationmanagerserver.cpp
+obj/server/notification.o: builddirs src/server/notification.cpp 
+	g++ -c -o obj/server/notification.o src/server/notification.cpp
 
-obj/profilemanager.o: src/profilemanager.cpp
-	g++ -c -o obj/profilemanager.o src/profilemanager.cpp
+obj/server/profile.o: builddirs src/server/profile.cpp
+	g++ -c -o obj/server/profile.o src/server/profile.cpp
 
-obj/mainserver.o: src/mainserver.cpp
-	g++ -c -o obj/mainserver.o src/mainserver.cpp -pthread
+obj/server/profilemanager.o: builddirs src/server/profilemanager.cpp
+	g++ -c -o obj/server/profilemanager.o src/server/profilemanager.cpp
+
+obj/server/mainserver.o: builddirs src/server/mainserver.cpp
+	g++ -c -o obj/server/mainserver.o src/server/mainserver.cpp -pthread
+
+builddirs: $(OBJDIRS)
+
+$(OBJDIRS):
+	mkdir -p $@ 
 
 clean:
-	rm obj/* client
+	rm obj client server -r
 

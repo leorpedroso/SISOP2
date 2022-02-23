@@ -1,11 +1,8 @@
-#include "../include/profilemanager.hpp"
-#include "../include/profile.hpp"
-#include <iostream>
+#include "../../include/server/profilemanager.hpp"
 #include <fstream>
 #include <sstream>
-#include<map>
 
-ProfileManager::ProfileManager(std::string profileFile){
+ProfileManager::ProfileManager(const std::string &profileFile){
     this->profileFile = profileFile;
     loadProfiles();
 }
@@ -18,10 +15,10 @@ void ProfileManager::saveProfiles(){
         const Profile &profile = any.second;
 
         std::vector<std::string> followers = profile.getFollowersString();
-        outputFile << profile.getName() << " ";
+        outputFile << profile.getName();
 
         for(const std::string &follower: followers){
-            outputFile << follower << " ";
+            outputFile << " " << follower;
         }
 
         outputFile << "\n";
@@ -39,12 +36,9 @@ void ProfileManager::loadProfiles(){
     }
 
     std::string line;
-    std::string profile;
     while(getline(inputFile, line)) {
         std::stringstream stream(line);
-
-        std::unordered_map <std::string, int> m;
-        m["foo"] = 42;
+        std::string profile;
         
         stream >> profile;
         Profile prof = Profile(profile);
@@ -55,5 +49,22 @@ void ProfileManager::loadProfiles(){
             prof.addFollower(follower);
         }
     }
+}
 
+std::shared_ptr<Profile> ProfileManager::getProfile(const std::string &name){
+    auto pos = profiles.find(name);
+    if(pos ==  profiles.end()){
+        return nullptr;
+    } else {
+        return std::make_shared<Profile>(pos->second);
+    }
+}
+
+void ProfileManager::createProfile(const std::string &name){
+    if(getProfile(name) != nullptr){
+        throw std::invalid_argument("Name already exists");
+    } else {
+        Profile prof = Profile(name);
+        profiles.insert(std::make_pair(name, prof));
+    }
 }

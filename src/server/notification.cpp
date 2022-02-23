@@ -1,4 +1,4 @@
-#include "../include/notification.hpp"
+#include "../../include/server/notification.hpp"
 
 
 const std::string &Notification::getMessage() const {

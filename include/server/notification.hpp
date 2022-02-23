@@ -1,9 +1,6 @@
 #pragma once
 
 #include<string>
-#include<vector>
-#include<mutex>
-#include <queue>
 
 class Notification{
     private:
@@ -11,7 +8,7 @@ class Notification{
         int read;
 
     public:
-        Notification(std::string message);
+        Notification(const std::string &message);
 
         const std::string &getMessage() const;       
 

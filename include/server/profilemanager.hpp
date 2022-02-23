@@ -3,6 +3,7 @@
 #include<string>
 #include<unordered_map>
 #include<mutex>
+#include"profile.hpp"
 
 class ProfileManager{
     private:
@@ -13,7 +14,11 @@ class ProfileManager{
         void loadProfiles();
 
     public:
-        ProfileManager(std::string profileFile);
+        ProfileManager(const std::string &profileFile);
         
         void saveProfiles();
+
+        std::shared_ptr<Profile> getProfile(const std::string &name);
+
+        void createProfile(const std::string &name);
 };
