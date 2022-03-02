@@ -38,7 +38,7 @@ builddirs:
 	mkdir -p $(subst $(SRCDIR),$(OBJDIR), $(STRUCTURE))
 
 cleanserver:
-	rm -r obj/server server
+	rm -r $(OBJDIR)/server server
 
 clean:
 	rm -r obj server client

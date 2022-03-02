@@ -35,6 +35,7 @@ int main() {
         read_buffer(session);
     }
     session.close();
+    connectionHandler.close();
     while(1) {
         cout << "Server --> Infinite loop" << endl;
         std::this_thread::sleep_for (std::chrono::seconds(2));
