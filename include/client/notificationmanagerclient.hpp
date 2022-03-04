@@ -11,6 +11,8 @@ class NotificationManager{
         Interface interface;
 
     public:
-        NotificationManager(const std::string &profile, const std::string &ip, int port, const Interface &interface) : profile(profile), ip(ip), port(port), interface(interface) {}
+        NotificationManager(const std::string &profile, const std::string &ip, int port, const Interface &interface) : 
+                            profile(profile), ip(ip), port(port), interface(interface) {}
+                            
         void listen();
 };

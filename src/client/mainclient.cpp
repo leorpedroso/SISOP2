@@ -1,7 +1,7 @@
 #include <iostream>
 #include <string>
-#include "../include/interface.hpp"
-#include "../include/notificationmanagerclient.hpp"
+#include "../../include/client/interface.hpp"
+#include "../../include/client/notificationmanagerclient.hpp"
 #include <pthread.h>
 #include <signal.h>
 

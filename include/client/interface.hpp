@@ -14,6 +14,7 @@ class Interface{
 
     public:
         Interface(const std::string &profile, const std::string &ip, int port) : profile(profile), ip(ip), port(port){}
+        
         void run();
         void updateNotifications(const std::string &notification);
 };
