@@ -1,22 +1,23 @@
 #pragma once
 
 #include <string>
+#include <thread>
 #include <mutex>
-#include <vector>
 
-#include "../../../include/server/test_class.hpp"
+#include "../test_class.hpp"
+#include "message_listener.hpp"
 
-class SessionManager {
+class SessionManager : public MessageListener {
     private:
-        Test test_obj; // TODO change this to communication class and its methods accordingly
-        std::mutex *send_mtx; // TODO change here so mutex is only within session class
-        std::mutex session_mtx;
-        bool session_closed;
-        std::vector<std::string> buffer;
+        std::thread send_thread;
+        std::mutex send_mtx;
+        bool should_send, sent;
+        std::string msg_send;
+
+        void _send();
+
     public:
-        SessionManager(std::mutex *send_mtx);
-        void listen();
-        void send(std::string msg, bool *sent);
-        bool close();
-        std::string read_buffer();
+        SessionManager(std::string clientName);
+        void send(std::string msg);
+        bool msg_sent();
 };

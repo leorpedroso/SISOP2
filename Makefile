@@ -1,24 +1,24 @@
-OBJDIR = obj
-MODULES := server client
 
+SRCDIR = src
+OBJDIR = obj
+FLAGS  = -pthread 
+MODULES := server client
 OBJDIRS := $(patsubst %, $(OBJDIR)/%, $(MODULES))
+
+STRUCTURE 		:= $(shell find $(SRCDIR) -type d)
+CODES 			:= $(addsuffix /*, $(STRUCTURE))
+CODES			:= $(wildcard $(CODES))
+SRCFILES 		:= $(filter %.cpp,$(CODES))
+OBJFILES 		:= $(subst $(SRCDIR),$(OBJDIR), $(SRCFILES:%.cpp=%.o))
+
+SERVEROBJ		:= $(filter $(OBJDIR)/server/%, $(OBJFILES))
 
 all: client server
 
-server: obj/server/test_class.o obj/server/connection_manager.o obj/server/session_manager.o obj/server/maintest.o
-	g++ -o server obj/server/test_class.o obj/server/connection_manager.o obj/server/session_manager.o obj/server/maintest.o -pthread
+server: servercompile
+	g++ -o server $(SERVEROBJ) $(FLAGS)
 
-obj/server/test_class.o: src/server/test_class.cpp
-	g++ -c -o obj/server/test_class.o src/server/test_class.cpp 
-
-obj/server/connection_manager.o: src/server/profile_management/connection_manager.cpp
-	g++ -c -o obj/server/connection_manager.o src/server/profile_management/connection_manager.cpp -pthread
-
-obj/server/session_manager.o: src/server/profile_management/session_manager.cpp
-	g++ -c -o obj/server/session_manager.o src/server/profile_management/session_manager.cpp -pthread
-
-obj/server/maintest.o: src/server/maintest.cpp
-	g++ -c -o obj/server/maintest.o src/server/maintest.cpp
+servercompile: builddirs $(SERVEROBJ)
 
 client: obj/client/notificationmanagerclient.o obj/client/interface.o obj/client/mainclient.o 
 	g++ -o client obj/client/mainclient.o obj/client/interface.o obj/client/notificationmanagerclient.o -pthread
@@ -52,10 +52,14 @@ builddirs: $(OBJDIRS)
 $(OBJDIRS):
 	mkdir -p $@ 
 
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+	g++ -c $< -o $@ $(FLAGS)
+
+builddirs:
+	mkdir -p $(subst $(SRCDIR),$(OBJDIR), $(STRUCTURE))
 
 cleanserver:
-	rm obj/server/* server
+	rm -r $(OBJDIR)/server server
 
 clean:
-	rm obj client server -r
-
+	rm -r obj server client
