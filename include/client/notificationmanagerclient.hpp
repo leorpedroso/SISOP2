@@ -2,17 +2,17 @@
 
 #include <string>
 #include "interface.hpp"
+#include "../common/socket.hpp"
 
 class NotificationManager{
     private:
         std::string profile;
-        std::string ip;
-        int port;
+        Socket sock;
         Interface interface;
 
     public:
-        NotificationManager(const std::string &profile, const std::string &ip, int port, const Interface &interface) : 
-                            profile(profile), ip(ip), port(port), interface(interface) {}
+        NotificationManager(const std::string &profile, Socket sock, const Interface &interface) : 
+                            profile(profile), sock(sock), interface(interface) {}
                             
         void listen();
 };

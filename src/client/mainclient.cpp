@@ -4,10 +4,13 @@
 #include "../../include/client/notificationmanagerclient.hpp"
 #include <pthread.h>
 #include <signal.h>
+#include "../../include/common/socket.hpp"
 
 
 pthread_t interfaceThread_t;
 pthread_t notificationThread_t;
+
+Socket sock;
 struct ClientArgs{
     std::string profile;
     std::string ip;
@@ -29,10 +32,12 @@ void *interfaceThread(void *arg){
 }
 
 void signalHandler(int s){
-    // TODO
-    // 1. Send exit message.
+    // Send exit message.
+    sock.send(sock.EXIT);
 
     pthread_cancel(interfaceThread_t);
+
+    closeSocket();
 }
 
 int main(int argc, char*argv[]) {
@@ -47,17 +52,31 @@ int main(int argc, char*argv[]) {
     std::string profile = argv[1];
     ClientArgs clientArgs(argv[1], argv[2], std::stoi(argv[3]));
 
-
-    // TODO 
     // 1. Send message to server requesting login
-    // 2. if result==OK continue else exit(1)
+    sock.setoth_addr(argv[2], std::stoi(argv[3]));
+    sock.send(sock.CONNECT + " " + clientArgs.profile);
 
-    Interface interface(clientArgs.profile, clientArgs.ip, clientArgs.port);
-    NotificationManager manager(clientArgs.profile, clientArgs.ip, clientArgs.port, interface);
+    // 2. if result==OK continue else exit(1)
+    std::string result = sock.listen();
+    std::string type = sock.getTypeMessage(result);
+    if (type == sock.CONNECT_NOT_OK){
+        std::cout << "ERROR " << result << std::endl;
+        exit(1);
+    } else if(type == sock.CONNECT_OK){
+        std::cout << "OK" << result << std::endl;
+    } else {
+        std::cout << "ERROR " << result << std::endl;
+        exit(1);
+    }
+
+    Interface interface(clientArgs.profile, sock);
+    NotificationManager manager(clientArgs.profile, sock, interface);
 
     pthread_create(&interfaceThread_t, NULL, interfaceThread, &interface);
     pthread_create(&notificationThread_t, NULL, notificationThread, &manager);
 
     pthread_join(interfaceThread_t, NULL);
     pthread_cancel(notificationThread_t);
+
+    closeSocket();
 }

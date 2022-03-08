@@ -60,13 +60,13 @@ bool Interface::parseString(const std::string &input, std::string &command, std:
 }
 
 void Interface::follow(const std::string &name) {
-    // TODO
-    // 1. send follow message.
+    // send follow message.
+    sock.send(sock.FOLLOW + " " + name);
 }
 
 void Interface::send(const std::string &message) {
-    // TODO
-    // 1. send message to followers.
+    // send message to followers.
+    sock.send(sock.SEND_NOTIFICATION + " " + message);
 }
 
 void Interface::updateNotifications(const std::string &notification){

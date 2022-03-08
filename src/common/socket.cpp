@@ -8,11 +8,20 @@
 #include <netinet/in.h>
 #include <string>
 #include <netdb.h>
+#include <sstream>
 #include <strings.h>
 #include <stdio.h>
 
+const std::string Socket::CONNECT = "0";
+const std::string Socket::CONNECT_OK = "1";
+const std::string Socket::CONNECT_NOT_OK = "2";
+const std::string Socket::EXIT = "3";
+const std::string Socket::FOLLOW = "4";
+const std::string Socket::SEND_NOTIFICATION = "5";
+const std::string Socket::NOTIFICATION = "6";
+const int Socket::MAX_MESSAGE_SIZE = 256;
+
 Socket::Socket(int port){
-    int sockfd;
 	struct sockaddr_in serv_addr;
     clilen = sizeof(struct sockaddr_in);
 		
@@ -29,10 +38,11 @@ Socket::Socket(int port){
 	 
 	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(struct sockaddr)) < 0) 
 		printf("ERROR on binding");
+
+    connected = false;
 }
 
-
-Socket::~Socket(){
+void Socket::closeSocket(){
     close(sockfd);
 }
 
@@ -98,3 +108,36 @@ void Socket::setoth_addr(char *hostname, int port){
     oth_addr = new_addr;
 }
 
+std::vector<std::string> Socket::splitMessage(const std::string &message){
+    std::vector<std::string> spMessage;
+    std::stringstream stream(message);
+    
+    std::string line;
+    while(stream >> line) {
+        spMessage.push_back(line);
+    }
+
+    return spMessage;
+}
+
+std::vector<std::string> Socket::splitUpToMessage(const std::string &message, int n){
+    std::vector<std::string> spMessage;
+    std::stringstream stream(message);
+    
+    std::string line;
+    int i = 1;
+    while(i < n && stream >> line) {
+        spMessage.push_back(line);
+    }
+    getline(stream, line);
+    spMessage.push_back(line);
+
+    return spMessage;
+}
+
+std::string Socket::getTypeMessage(const std::string &message){
+    std::stringstream stream(message);
+    std::string line;
+    stream >> line;
+    return line;
+}

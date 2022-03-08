@@ -2,7 +2,7 @@
 SRCDIR = src
 OBJDIR = obj
 FLAGS  = -pthread 
-MODULES := server client
+MODULES := server client common
 OBJDIRS := $(patsubst %, $(OBJDIR)/%, $(MODULES))
 
 STRUCTURE 		:= $(shell find $(SRCDIR) -type d)
@@ -20,11 +20,14 @@ server: servercompile
 
 servercompile: builddirs $(SERVEROBJ)
 
-client: obj/client/notificationmanagerclient.o obj/client/interface.o obj/client/mainclient.o 
-	g++ -o client obj/client/mainclient.o obj/client/interface.o obj/client/notificationmanagerclient.o -pthread
+client: obj/common/socket.o obj/client/notificationmanagerclient.o obj/client/interface.o obj/client/mainclient.o 
+	g++ -o client obj/client/mainclient.o obj/client/interface.o obj/client/notificationmanagerclient.o obj/common/socket.o -pthread
 
 obj/client/notificationmanagerclient.o: builddirs src/client/notificationmanagerclient.cpp 
 	g++ -c -o obj/client/notificationmanagerclient.o src/client/notificationmanagerclient.cpp
+
+obj/common/socket.o: builddirs src/common/socket.cpp
+	g++ -c -o obj/common/socket.o src/common/socket.cpp
 
 obj/client/interface.o: builddirs src/client/interface.cpp
 	g++ -c -o obj/client/interface.o src/client/interface.cpp
