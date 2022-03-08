@@ -63,7 +63,7 @@ int main(int argc, char*argv[]) {
         std::cout << "ERROR " << result << std::endl;
         exit(1);
     } else if(type == sock.CONNECT_OK){
-        std::cout << "OK" << result << std::endl;
+        std::cout << "OK " << result << std::endl;
     } else {
         std::cout << "ERROR " << result << std::endl;
         exit(1);
