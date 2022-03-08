@@ -37,7 +37,7 @@ void signalHandler(int s){
 
     pthread_cancel(interfaceThread_t);
 
-    closeSocket();
+    sock.closeSocket();
 }
 
 int main(int argc, char*argv[]) {
@@ -78,5 +78,5 @@ int main(int argc, char*argv[]) {
     pthread_join(interfaceThread_t, NULL);
     pthread_cancel(notificationThread_t);
 
-    closeSocket();
+    sock.closeSocket();
 }
