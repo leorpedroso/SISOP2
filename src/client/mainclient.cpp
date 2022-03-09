@@ -10,6 +10,9 @@
 pthread_t interfaceThread_t;
 pthread_t notificationThread_t;
 
+std::string id;
+std::string profile;
+
 Socket sock;
 struct ClientArgs{
     std::string profile;
@@ -33,7 +36,7 @@ void *interfaceThread(void *arg){
 
 void signalHandler(int s){
     // Send exit message.
-    sock.send(sock.EXIT);
+    sock.send(sock.EXIT + " " + profile + " " + id);
 
     pthread_cancel(interfaceThread_t);
 
@@ -49,7 +52,7 @@ int main(int argc, char*argv[]) {
 
     signal(SIGINT, signalHandler);
 
-    std::string profile = argv[1];
+    profile = argv[1];
     ClientArgs clientArgs(argv[1], argv[2], std::stoi(argv[3]));
 
     // 1. Send message to server requesting login
@@ -63,6 +66,7 @@ int main(int argc, char*argv[]) {
         std::cout << "ERROR " << result << std::endl;
         exit(1);
     } else if(type == sock.CONNECT_OK){
+        id = sock.splitUpToMessage(result, 2)[1];
         std::cout << "OK " << result << std::endl;
     } else {
         std::cout << "ERROR " << result << std::endl;

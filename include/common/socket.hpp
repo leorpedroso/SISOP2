@@ -28,14 +28,12 @@ class Socket{
         const static std::string NOTIFICATION;
         const static int MAX_MESSAGE_SIZE;
 
-        Socket(int port = 0, bool reuseAddr = false);
+        Socket(int port = 0);
         void closeSocket();
         
         void send(const std::string &message);
+        void send(const std::string &message, struct sockaddr_in addr);
         std::string listen();
-
-        void setConnect();
-        void setReuseAddr();
 
         struct sockaddr_in getoth_addr();
         void setoth_addr(char *hostname, int port);

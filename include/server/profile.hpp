@@ -14,7 +14,7 @@ class Profile{
     private:
         std::string profileName;
         std::vector<std::string> followers;
-        std::unordered_set<std::thread::id> readMap;
+        std::unordered_set<std::string> readMap;
         std::queue<Notification> notifications;
         int numSessions;
         std::mutex *notificationsMutex;
@@ -35,8 +35,8 @@ class Profile{
         std::vector<std::string> getFollowers();
 
         void putNotification(const std::string &message, const std::string &sender);
-        Notification readNotification(std::thread::id id);
-        bool canRead(std::thread::id id);
+        Notification readNotification(const std::string &id);
+        bool canRead(const std::string &id);
 
         void addFollower(const std::string &follower, bool save = false);
         void notifyFollowers(const std::string &message);

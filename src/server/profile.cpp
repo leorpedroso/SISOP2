@@ -45,15 +45,17 @@ std::vector<std::string> Profile::getFollowers(){
 };
 
 void Profile::putNotification(const std::string &message, const std::string &sender){
+    std::cout<< "1" << sender << " "<< profileName << " " << message << std::endl;
     notificationsMutex->lock();
 
-
+    std::cout<< "2" << sender << " "<< profileName << " " << message << std::endl;
     notifications.push(Notification(message, sender));
+    std::cout << "NOT LEN:" << notifications.size() << std::endl;
     notEmpty->notify_all();
 
     notificationsMutex->unlock();
 }
-Notification Profile::readNotification(std::thread::id id){
+Notification Profile::readNotification(const std::string &id){
     std::unique_lock<std::mutex> mlock(*notificationsMutex);
 
     while(notifications.empty()){
@@ -71,6 +73,9 @@ Notification Profile::readNotification(std::thread::id id){
 
     readMap.insert(id);
 
+    std::cout << readMap.size()<< std::endl;
+    std::cout << notificationRef.getRead() << std::endl;
+    std::cout << numSessions << std::endl;
     if(notificationRef.getRead() == numSessions){
         notifications.pop();
         readMap.clear();
@@ -82,7 +87,7 @@ Notification Profile::readNotification(std::thread::id id){
     return notification;
 }
 
-bool Profile::canRead(std::thread::id id){
+bool Profile::canRead(const std::string &id){
     readMapMutex->lock();
 
     bool can = (readMap.find(id) == readMap.end());

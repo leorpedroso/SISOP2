@@ -16,20 +16,22 @@
 
 class SessionManager{
     private:
-        Socket sock;
+        Socket *sock;
         Profile *prof;
-        std::thread::id send_id;
-        std::thread::id listen_id;
+        std::string send_id;
+        struct sockaddr_in addr;
         bool session_closed;
         std::thread send_thread;
-        std::thread listen_thread;
         std::mutex session_mtx;
 
         bool sessionClosed();
-        void closeSession();
 
     public:
-        SessionManager(int port, struct sockaddr_in addr, Profile *_prof);
+        SessionManager(Socket *sock, struct sockaddr_in addr, Profile *_prof);
         void send();
-        void listen();
+
+        void closeSession();
 };
+
+void putSession(const std::string &id, SessionManager* man);
+SessionManager *getSession(const std::string &name);
