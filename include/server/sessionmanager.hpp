@@ -18,6 +18,8 @@ class SessionManager{
     private:
         Socket sock;
         Profile *prof;
+        std::thread::id send_id;
+        std::thread::id listen_id;
         bool session_closed;
         std::thread send_thread;
         std::thread listen_thread;

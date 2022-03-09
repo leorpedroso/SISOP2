@@ -103,7 +103,6 @@ void Profile::addFollower(const std::string &follower, bool save){
 }
 
 void Profile::notifyFollowers(const std::string &message){
-    for (auto fol:getFollowers()){std::cout<< "fol:" << fol << std::endl;}
     for (auto fol:getFollowers()){
         getProfile(fol)->putNotification(message, profileName);
     }

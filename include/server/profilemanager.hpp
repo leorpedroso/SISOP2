@@ -7,6 +7,8 @@
 
 void createProfileManager(const std::string &profileFile);
 
+void printProfiles();
+
 Profile *getProfile(const std::string &name);
 
 void createProfile(const std::string &name);

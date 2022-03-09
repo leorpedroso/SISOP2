@@ -22,8 +22,8 @@ int main(int argc, char*argv[]) {
     
 
     createProfileManager(profileFile);
+    printProfiles();
 
-    // TODO: connection manager thread
     Socket sock(port_prim);
     while(1){
         std::string message = sock.listen();
