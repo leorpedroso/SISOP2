@@ -9,14 +9,21 @@ class ProfileManager{
     private:
         std::unordered_map<std::string, Profile> profiles;
         std::string profileFile;
-        std::mutex profileFileMutex;
+        std::shared_ptr<std::mutex> profileFileMutex;
+        std::shared_ptr<std::mutex> profileMapMutex;
 
         void loadProfiles();
+        void saveProfiles();
 
     public:
         ProfileManager(const std::string &profileFile);
+
         
-        void saveProfiles();
+        ProfileManager(ProfileManager &man): profiles(man.profiles),
+                                            profileFile(man.profileFile),
+                                            profileFileMutex(man.profileFileMutex),
+                                            profileMapMutex(man.profileMapMutex){}
+        
 
         std::shared_ptr<Profile> getProfile(const std::string &name);
 

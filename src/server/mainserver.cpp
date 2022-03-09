@@ -15,9 +15,11 @@ int main(int argc, char*argv[]) {
         std::cerr << " ./app_server <porta_primaria> <porta_secundaria>" << std::endl;
         exit(1);
     }
-
+    
     int port_prim = atoi(argv[1]);
     int port_sec = atoi(argv[2]);
+
+    
 
     ProfileManager profileManager(profileFile);
 
@@ -34,9 +36,9 @@ int main(int argc, char*argv[]) {
             if(prof == nullptr){
                 profileManager.createProfile(name);
                 prof = profileManager.getProfile(name);
-                SessionManager sess(port_sec, sock.getoth_addr(), *prof);
+                SessionManager sess(port_sec, sock.getoth_addr(), *prof, profileManager);
             } else if (prof->getSessions() < prof->MAX_SESSIONS){
-                SessionManager sess(port_sec, sock.getoth_addr(), *prof);
+                SessionManager sess(port_sec, sock.getoth_addr(), *prof, profileManager);
             } else {
                 sock.send(sock.CONNECT_NOT_OK + " Profile already has 2 Sessions");
             }

@@ -21,7 +21,7 @@ const std::string Socket::SEND_NOTIFICATION = "5";
 const std::string Socket::NOTIFICATION = "6";
 const int Socket::MAX_MESSAGE_SIZE = 256;
 
-Socket::Socket(int port){
+Socket::Socket(int port, bool reuseAddr){
 	struct sockaddr_in serv_addr;
     clilen = sizeof(struct sockaddr_in);
 		
@@ -35,6 +35,9 @@ Socket::Socket(int port){
 	    serv_addr.sin_port = 0;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	bzero(&(serv_addr.sin_zero), 8);    
+
+    if (reuseAddr)
+        setReuseAddr();
 	 
 	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(struct sockaddr)) < 0) 
 		printf("ERROR on binding");

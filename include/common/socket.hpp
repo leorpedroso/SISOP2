@@ -28,7 +28,7 @@ class Socket{
         const static std::string NOTIFICATION;
         const static int MAX_MESSAGE_SIZE;
 
-        Socket(int port = 0);
+        Socket(int port = 0, bool reuseAddr = false);
         void closeSocket();
         
         void send(const std::string &message);

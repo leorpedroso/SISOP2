@@ -1,10 +1,11 @@
 #include "../../include/server/sessionmanager.hpp"
 #include <iostream>
+#include "../../include/server/profilemanager.hpp"
 #include "../../include/server/notification.hpp"
 
-SessionManager::SessionManager(int port, struct sockaddr_in addr, Profile _prof): prof(_prof), sock(port) {
+
+SessionManager::SessionManager(int port, struct sockaddr_in addr, Profile _prof, ProfileManager manager): prof(_prof), sock(port, true), manager(manager) {
     sock.setoth_addr(addr);
-    sock.setReuseAddr();
     sock.setConnect();
 
     prof.incrementSessions();
@@ -15,7 +16,7 @@ SessionManager::SessionManager(int port, struct sockaddr_in addr, Profile _prof)
     send_thread.detach();
 
     listen_thread = std::thread(&SessionManager::listen, this);
-    send_thread.detach();
+    listen_thread.detach();
 }
 
 void SessionManager::send(){    
@@ -38,7 +39,13 @@ void SessionManager::listen(){
             prof.decrementSessions();
             break;
         } else if (type == sock.FOLLOW){
-            prof.addFollower(sock.splitUpToMessage(message, 2)[1]);
+            std::string follower = sock.splitUpToMessage(message, 2)[1];
+            std::shared_ptr<Profile> folProf = manager.getProfile(follower);
+            if (folProf == nullptr){
+                std::cout << "Profile doesn't exist" << std::endl;
+            } else {
+                prof.addFollower(*folProf);
+            }
         } else if (type == sock.SEND_NOTIFICATION){
             for (auto fol:prof.getFollowers()){
                 fol.putNotification(sock.splitUpToMessage(message, 2)[1]);

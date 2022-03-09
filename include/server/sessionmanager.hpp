@@ -12,11 +12,13 @@
 #include <stdio.h>
 #include "../common/socket.hpp"
 #include "../server/profile.hpp"
+#include "../server/profilemanager.hpp"
 
 class SessionManager{
     private:
         Socket sock;
         Profile prof;
+        ProfileManager manager;
         bool session_closed;
         std::thread send_thread;
         std::thread listen_thread;
@@ -26,7 +28,7 @@ class SessionManager{
         void closeSession();
 
     public:
-        SessionManager(int port, struct sockaddr_in addr, Profile _prof);
+        SessionManager(int port, struct sockaddr_in addr, Profile _prof, ProfileManager manager);
         void send();
         void listen();
 };

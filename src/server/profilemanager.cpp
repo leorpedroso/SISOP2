@@ -1,14 +1,14 @@
 #include "../../include/server/profilemanager.hpp"
 #include <fstream>
 #include <sstream>
+#include <iostream>
 
-ProfileManager::ProfileManager(const std::string &profileFile){
+ProfileManager::ProfileManager(const std::string &profileFile): profileFileMutex(new std::mutex), profileMapMutex(new std::mutex){
     this->profileFile = profileFile;
     loadProfiles();
 }
 
 void ProfileManager::saveProfiles(){
-    profileFileMutex.lock();
     std::ofstream outputFile(profileFile, std::ios::trunc);
 
     for(const auto &any: profiles) {
@@ -25,7 +25,6 @@ void ProfileManager::saveProfiles(){
     }
     
     outputFile.close();
-    profileFileMutex.unlock();
 }
 
 void ProfileManager::loadProfiles(){
@@ -43,7 +42,6 @@ void ProfileManager::loadProfiles(){
         stream >> profile;
         std::shared_ptr<Profile> profPtr = getProfile(profile);
         Profile prof = Profile(profile);
-
         if (profPtr != nullptr){
             prof = *profPtr;
         }
@@ -65,19 +63,26 @@ void ProfileManager::loadProfiles(){
 }
 
 std::shared_ptr<Profile> ProfileManager::getProfile(const std::string &name){
+    std::unique_lock<std::mutex> mlock(*profileMapMutex);
+
     auto pos = profiles.find(name);
     if(pos == profiles.end()){
-        return nullptr;
+         return nullptr;
     } else {
         return std::make_shared<Profile>(pos->second);
     }
 }
 
 void ProfileManager::createProfile(const std::string &name){
-    if(getProfile(name) != nullptr){
-        throw std::invalid_argument("Name already exists");
+    std::unique_lock<std::mutex> mlock(*profileMapMutex);
+
+    auto pos = profiles.find(name);
+
+    if(pos != profiles.end()){
+        return;
     } else {
         Profile prof = Profile(name);
         profiles.insert(std::make_pair(name, prof));
+        saveProfiles();
     }
 }
