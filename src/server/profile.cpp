@@ -1,4 +1,6 @@
 #include "../../include/server/profile.hpp"
+#include "../../include/server/profilemanager.hpp"
+#include <iostream>
 
 const int Profile::MAX_SESSIONS = 2;
 
@@ -49,7 +51,7 @@ Notification Profile::readNotification(std::thread::id id){
 bool Profile::canRead(std::thread::id id){
     readMapMutex->lock();
 
-    bool can = (readMap.find(id) != readMap.end());
+    bool can = (readMap.find(id) == readMap.end());
 
     readMapMutex->unlock();
 
@@ -58,6 +60,8 @@ bool Profile::canRead(std::thread::id id){
 
 void Profile::addFollower(const Profile &follower){
     followers.push_back(follower);
+    std::cout << followers.size() << std::endl;
+    safeSaveProfiles();
 }
 
 void Profile::incrementSessions(){

@@ -18,7 +18,6 @@ class SessionManager{
     private:
         Socket sock;
         Profile prof;
-        ProfileManager manager;
         bool session_closed;
         std::thread send_thread;
         std::thread listen_thread;
@@ -28,7 +27,7 @@ class SessionManager{
         void closeSession();
 
     public:
-        SessionManager(int port, struct sockaddr_in addr, Profile _prof, ProfileManager manager);
+        SessionManager(int port, struct sockaddr_in addr, Profile _prof);
         void send();
         void listen();
 };

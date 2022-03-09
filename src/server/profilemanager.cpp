@@ -3,20 +3,26 @@
 #include <sstream>
 #include <iostream>
 
-ProfileManager::ProfileManager(const std::string &profileFile): profileFileMutex(new std::mutex), profileMapMutex(new std::mutex){
-    this->profileFile = profileFile;
+std::unordered_map<std::string, Profile> _profiles;
+std::string _profileFile;
+std::mutex _profileFileMutex;
+std::mutex _profileMapMutex;
+
+void createProfileManager(const std::string &profileFile){
+    _profileFile = profileFile;
     loadProfiles();
 }
 
-void ProfileManager::saveProfiles(){
-    std::ofstream outputFile(profileFile, std::ios::trunc);
 
-    for(const auto &any: profiles) {
+void saveProfiles(){
+    std::ofstream outputFile(_profileFile, std::ios::trunc);
+
+    for(const auto &any: _profiles) {
         const Profile &profile = any.second;
 
         std::vector<Profile> followers = profile.getFollowers();
         outputFile << profile.getName();
-
+        std::cout << followers.size() << std::endl;
         for(const Profile &follower: followers){
             outputFile << " " << follower.getName();
         }
@@ -27,8 +33,8 @@ void ProfileManager::saveProfiles(){
     outputFile.close();
 }
 
-void ProfileManager::loadProfiles(){
-    std::ifstream inputFile(profileFile);
+void loadProfiles(){
+    std::ifstream inputFile(_profileFile);
 
     if (!inputFile.is_open()) {
         return;
@@ -46,7 +52,7 @@ void ProfileManager::loadProfiles(){
             prof = *profPtr;
         }
 
-        profiles.insert(std::make_pair(profile, prof));
+        _profiles.insert(std::make_pair(profile, prof));
         
         std::string follower;
         while(stream >> follower) {
@@ -62,27 +68,32 @@ void ProfileManager::loadProfiles(){
     }
 }
 
-std::shared_ptr<Profile> ProfileManager::getProfile(const std::string &name){
-    std::unique_lock<std::mutex> mlock(*profileMapMutex);
+std::shared_ptr<Profile> getProfile(const std::string &name){
+    std::unique_lock<std::mutex> mlock(_profileMapMutex);
 
-    auto pos = profiles.find(name);
-    if(pos == profiles.end()){
+    auto pos = _profiles.find(name);
+    if(pos == _profiles.end()){
          return nullptr;
     } else {
         return std::make_shared<Profile>(pos->second);
     }
 }
 
-void ProfileManager::createProfile(const std::string &name){
-    std::unique_lock<std::mutex> mlock(*profileMapMutex);
+void createProfile(const std::string &name){
+    std::unique_lock<std::mutex> mlock(_profileMapMutex);
 
-    auto pos = profiles.find(name);
+    auto pos = _profiles.find(name);
 
-    if(pos != profiles.end()){
+    if(pos != _profiles.end()){
         return;
     } else {
         Profile prof = Profile(name);
-        profiles.insert(std::make_pair(name, prof));
+        _profiles.insert(std::make_pair(name, prof));
         saveProfiles();
     }
+}
+
+void safeSaveProfiles(){
+    std::unique_lock<std::mutex> mlock(_profileMapMutex);
+    saveProfiles();
 }

@@ -4,11 +4,13 @@
 #include "../../include/server/notification.hpp"
 
 
-SessionManager::SessionManager(int port, struct sockaddr_in addr, Profile _prof, ProfileManager manager): prof(_prof), sock(port, true), manager(manager) {
+SessionManager::SessionManager(int port, struct sockaddr_in addr, Profile _prof): prof(_prof), sock(port, true){
     sock.setoth_addr(addr);
     sock.setConnect();
 
     prof.incrementSessions();
+
+    session_closed = false;
 
     sock.send(sock.CONNECT_OK);
 
@@ -40,7 +42,7 @@ void SessionManager::listen(){
             break;
         } else if (type == sock.FOLLOW){
             std::string follower = sock.splitUpToMessage(message, 2)[1];
-            std::shared_ptr<Profile> folProf = manager.getProfile(follower);
+            std::shared_ptr<Profile> folProf = getProfile(follower);
             if (folProf == nullptr){
                 std::cout << "Profile doesn't exist" << std::endl;
             } else {
