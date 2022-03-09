@@ -15,16 +15,16 @@ void createProfileManager(const std::string &profileFile){
 
 
 void saveProfiles(){
-    std::ofstream outputFile(_profileFile, std::ios::trunc);
+    std::ofstream outputFile(_profileFile, std::ofstream::out | std::ofstream::trunc);
 
-    for(const auto &any: _profiles) {
-        const Profile &profile = any.second;
+    for(auto &any: _profiles) {
+        Profile profile = any.second;
 
-        std::vector<Profile> followers = profile.getFollowers();
-        outputFile << profile.getName();
-        std::cout << followers.size() << std::endl;
-        for(const Profile &follower: followers){
-            outputFile << " " << follower.getName();
+        std::vector<std::string> followers = profile.getFollowers();
+        outputFile << any.second.getName();
+
+        for(const std::string &follower: followers){
+            outputFile << " " << follower;
         }
 
         outputFile << "\n";
@@ -42,40 +42,49 @@ void loadProfiles(){
 
     std::string line;
     while(getline(inputFile, line)) {
+        std::cout << "line:" << line << std::endl;
         std::stringstream stream(line);
         std::string profile;
         
         stream >> profile;
-        std::shared_ptr<Profile> profPtr = getProfile(profile);
+        std::cout << "profile:" << profile << std::endl;
         Profile prof = Profile(profile);
-        if (profPtr != nullptr){
-            prof = *profPtr;
-        }
-
-        _profiles.insert(std::make_pair(profile, prof));
         
         std::string follower;
         while(stream >> follower) {
-            std::shared_ptr<Profile> folPtr = getProfile(follower);
-            Profile profFol = Profile(follower);
-
-            if (folPtr != nullptr){
-                profFol = *folPtr;
-            }
-
-            prof.addFollower(profFol);
+            std::cout << "follower:" << follower  << std::endl;
+            prof.addFollower(follower);
+            for(auto algumacoisa:prof.getFollowers()) std::cout << algumacoisa << std::endl;
         }
+        for(auto algumacoisa:prof.getFollowers()) std::cout << algumacoisa << std::endl;
+
+        _profiles.insert(std::make_pair(profile, prof));
+    }
+
+    for(auto &any: _profiles) {
+        Profile profile = any.second;
+
+        std::vector<std::string> followers = profile.getFollowers();
+        std::cout << any.second.getName() << std::endl;
+
+        for(const std::string &follower: followers){
+            std::cout << " " << follower << std::endl;
+        }
+
+        std::cout << "\n" << std::endl;
     }
 }
 
-std::shared_ptr<Profile> getProfile(const std::string &name){
+Profile *getProfile(const std::string &name){
     std::unique_lock<std::mutex> mlock(_profileMapMutex);
 
+    std::cout << "given name: " << name << std::endl;
     auto pos = _profiles.find(name);
     if(pos == _profiles.end()){
          return nullptr;
     } else {
-        return std::make_shared<Profile>(pos->second);
+        std::cout << "profile name: " << pos->second.getName() << std::endl;
+        return &(pos->second);
     }
 }
 
@@ -87,8 +96,8 @@ void createProfile(const std::string &name){
     if(pos != _profiles.end()){
         return;
     } else {
-        Profile prof = Profile(name);
-        _profiles.insert(std::make_pair(name, prof));
+        Profile prof(name);
+        _profiles.insert({name, prof});
         saveProfiles();
     }
 }

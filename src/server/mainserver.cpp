@@ -32,13 +32,13 @@ int main(int argc, char*argv[]) {
 
         if(type == sock.CONNECT){
             std::string name = spMessage[1];
-            std::shared_ptr<Profile> prof = getProfile(name);
+            Profile *prof = getProfile(name);
             if(prof == nullptr){
                 createProfile(name);
                 prof = getProfile(name);
-                SessionManager sess(port_sec, sock.getoth_addr(), *prof);
+                SessionManager sess(port_sec, sock.getoth_addr(), prof);
             } else if (prof->getSessions() < prof->MAX_SESSIONS){
-                SessionManager sess(port_sec, sock.getoth_addr(), *prof);
+                SessionManager sess(port_sec, sock.getoth_addr(), prof);
             } else {
                 sock.send(sock.CONNECT_NOT_OK + " Profile already has 2 Sessions");
             }

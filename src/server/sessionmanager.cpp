@@ -4,54 +4,89 @@
 #include "../../include/server/notification.hpp"
 
 
-SessionManager::SessionManager(int port, struct sockaddr_in addr, Profile _prof): prof(_prof), sock(port, true){
+extern std::unordered_map<std::string, Profile> _profiles;
+
+int gambiarra = 0;
+
+SessionManager::SessionManager(int port, struct sockaddr_in addr, Profile *_prof): prof(_prof), sock(port, true){
     sock.setoth_addr(addr);
     sock.setConnect();
 
-    prof.incrementSessions();
+    prof->incrementSessions();
 
     session_closed = false;
 
     sock.send(sock.CONNECT_OK);
 
     send_thread = std::thread(&SessionManager::send, this);
+    std::thread::id thread_id = send_thread.get_id();
+    std::cout<< "start thread_id:" << thread_id << std::endl;
     send_thread.detach();
 
     listen_thread = std::thread(&SessionManager::listen, this);
     listen_thread.detach();
+
+    std::thread::id thread_id2 = send_thread.get_id();
+    std::cout<< "start thread_id:" << thread_id2 << std::endl;
 }
 
 void SessionManager::send(){    
+    ++gambiarra;
+    int valorSalvo = gambiarra;
     std::thread::id thread_id = send_thread.get_id();
+    std::cout << valorSalvo << "start thread_id:" << thread_id << std::endl;
+
+    std::cout << "1testedefinitivo: " << prof->getName() << " " << prof << std::endl; 
 
     while(1){
         if (sessionClosed()) break;
-        if(prof.canRead(thread_id))
-            sock.send(sock.NOTIFICATION + " " + prof.readNotification(thread_id).getMessage());
+        if(prof->canRead(thread_id)) {
+            for(auto &any: _profiles) {
+                Profile profile = any.second;
+
+                std::vector<std::string> followers = profile.getFollowers();
+                std::cout << any.second.getName() << std::endl;
+
+                for(const std::string &follower: followers){
+                    std::cout << " " << follower << std::endl;
+                }
+
+                std::cout << "\n" << std::endl;
+            }
+
+            //Profile *tempProf = getProfile("dafa2");
+            Notification notification = prof->readNotification(thread_id);
+            std::cout << valorSalvo << thread_id << prof->getName() << " " << notification.getSender() + " " + notification.getMessage() << std::endl;
+            std::cout << "2testedefinitivo: " << prof->getName() << " " << prof << std::endl; 
+            sock.send(sock.NOTIFICATION + " " + notification.getSender() + " " + notification.getMessage());
+        }
     }
 }
 
 void SessionManager::listen(){
+    std::cout << "beg smanager prof: " << prof->getName() << " " << std::endl; 
     while(1){
         std::string message = sock.listen();
         std::string type = sock.getTypeMessage(message);
 
         if (type == sock.EXIT){
+            std::cout << "EXIT" << std::endl;
             closeSession();
-            prof.decrementSessions();
+            prof->decrementSessions();
             break;
         } else if (type == sock.FOLLOW){
-            std::string follower = sock.splitUpToMessage(message, 2)[1];
-            std::shared_ptr<Profile> folProf = getProfile(follower);
+            std::cout << "FOLLOW" << std::endl;
+            std::string follow = sock.splitUpToMessage(message, 2)[1];
+            Profile *folProf = getProfile(follow);
             if (folProf == nullptr){
                 std::cout << "Profile doesn't exist" << std::endl;
             } else {
-                prof.addFollower(*folProf);
+                folProf->addFollower(prof->getName(), true);
             }
         } else if (type == sock.SEND_NOTIFICATION){
-            for (auto fol:prof.getFollowers()){
-                fol.putNotification(sock.splitUpToMessage(message, 2)[1]);
-            }
+            std::cout << "SEND_NOTIFICATION" << std::endl;
+            std::cout << "prof: " << prof->getName() << std::endl;
+            prof->notifyFollowers(sock.splitUpToMessage(message, 2)[1]);
         } else {
             std::cout << "ERROR " + message << std::endl;
         }

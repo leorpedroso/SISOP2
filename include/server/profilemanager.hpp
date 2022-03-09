@@ -7,7 +7,7 @@
 
 void createProfileManager(const std::string &profileFile);
 
-std::shared_ptr<Profile> getProfile(const std::string &name);
+Profile *getProfile(const std::string &name);
 
 void createProfile(const std::string &name);
 
