@@ -108,6 +108,10 @@ void Socket::setoth_addr(char *hostname, int port){
     oth_addr = new_addr;
 }
 
+void Socket::setoth_addr(struct sockaddr_in new_addr){
+    oth_addr = new_addr;
+}
+
 std::vector<std::string> Socket::splitMessage(const std::string &message){
     std::vector<std::string> spMessage;
     std::stringstream stream(message);

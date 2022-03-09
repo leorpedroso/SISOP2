@@ -15,7 +15,7 @@ SERVEROBJ		:= $(filter $(OBJDIR)/server/%, $(OBJFILES))
 
 all: client server
 
-server: servercompile
+server2: servercompile
 	g++ -o server $(SERVEROBJ) $(FLAGS)
 
 servercompile: builddirs $(SERVEROBJ)
@@ -35,8 +35,11 @@ obj/client/interface.o: builddirs src/client/interface.cpp
 obj/client/mainclient.o: builddirs src/client/mainclient.cpp
 	g++ -c -o obj/client/mainclient.o src/client/mainclient.cpp -pthread
 
-serverManagerTest: obj/server/notification.o obj/server/profile.o obj/server/profilemanager.o obj/server/mainserver.o 
-	g++ -o server obj/server/mainserver.o obj/server/profilemanager.o obj/server/notification.o obj/server/profile.o -pthread
+server: obj/common/socket.o obj/server/notification.o obj/server/profile.o obj/server/profilemanager.o obj/server/mainserver.o obj/server/sessionManager.o
+	g++ -o server obj/server/mainserver.o obj/server/profilemanager.o obj/server/notification.o obj/server/profile.o obj/server/sessionManager.o obj/common/socket.o -pthread
+
+server/sessionManager.o: builddirs src/server/sessionManager.cpp 
+	g++ -c -o obj/server/sessionManager.o src/server/sessionManager.cpp -pthread
 
 obj/server/notification.o: builddirs src/server/notification.cpp 
 	g++ -c -o obj/server/notification.o src/server/notification.cpp

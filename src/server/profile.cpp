@@ -1,9 +1,11 @@
 #include "../../include/server/profile.hpp"
 
+const int Profile::MAX_SESSIONS = 2;
+
 const std::string &Profile::getName() const{
     return profileName;
 }
-const std::vector<std::string> &Profile::getFollowersString() const{
+const std::vector<Profile> &Profile::getFollowers() const{
     return followers;
 };
 
@@ -15,7 +17,7 @@ void Profile::putNotification(const Notification &notification){
 
     notificationsMutex->unlock();
 }
-Notification Profile::readNotification(){
+Notification Profile::readNotification(std::thread::id id){
     std::unique_lock<std::mutex> mlock(*notificationsMutex);
 
     while(notifications.empty()){
@@ -27,16 +29,34 @@ Notification Profile::readNotification(){
 
     Notification notification = notificationRef;
 
+
     sessionsMutex->lock();
+    readMapMutex->lock();
+
+    readMap.insert(id);
+
     if(notificationRef.getRead() == numSessions){
         notifications.pop();
+        readMap.clear();
     }   
+
+    readMapMutex->unlock();
     sessionsMutex->unlock();
 
     return notification;
 }
 
-void Profile::addFollower(const std::string &follower){
+bool Profile::canRead(std::thread::id id){
+    readMapMutex->lock();
+
+    bool can = (readMap.find(id) != readMap.end());
+
+    readMapMutex->unlock();
+
+    return can;
+}
+
+void Profile::addFollower(const Profile &follower){
     followers.push_back(follower);
 }
 
@@ -54,4 +74,14 @@ void Profile::decrementSessions(){
     --numSessions;
 
     sessionsMutex->unlock();
+}
+
+int Profile::getSessions(){
+    sessionsMutex->lock();
+
+    int val = numSessions;
+
+    sessionsMutex->unlock();
+
+    return numSessions;
 }

@@ -8,7 +8,7 @@ class Notification{
         int read;
 
     public:
-        Notification(const std::string &message);
+        Notification(const std::string &message): message(message) {}
 
         const std::string &getMessage() const;       
 

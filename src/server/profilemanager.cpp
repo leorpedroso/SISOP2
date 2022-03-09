@@ -14,11 +14,11 @@ void ProfileManager::saveProfiles(){
     for(const auto &any: profiles) {
         const Profile &profile = any.second;
 
-        std::vector<std::string> followers = profile.getFollowersString();
+        std::vector<Profile> followers = profile.getFollowers();
         outputFile << profile.getName();
 
-        for(const std::string &follower: followers){
-            outputFile << " " << follower;
+        for(const Profile &follower: followers){
+            outputFile << " " << follower.getName();
         }
 
         outputFile << "\n";
@@ -41,19 +41,32 @@ void ProfileManager::loadProfiles(){
         std::string profile;
         
         stream >> profile;
+        std::shared_ptr<Profile> profPtr = getProfile(profile);
         Profile prof = Profile(profile);
+
+        if (profPtr != nullptr){
+            prof = *profPtr;
+        }
+
         profiles.insert(std::make_pair(profile, prof));
         
         std::string follower;
         while(stream >> follower) {
-            prof.addFollower(follower);
+            std::shared_ptr<Profile> folPtr = getProfile(follower);
+            Profile profFol = Profile(follower);
+
+            if (folPtr != nullptr){
+                profFol = *folPtr;
+            }
+
+            prof.addFollower(profFol);
         }
     }
 }
 
 std::shared_ptr<Profile> ProfileManager::getProfile(const std::string &name){
     auto pos = profiles.find(name);
-    if(pos ==  profiles.end()){
+    if(pos == profiles.end()){
         return nullptr;
     } else {
         return std::make_shared<Profile>(pos->second);

@@ -39,6 +39,7 @@ class Socket{
 
         struct sockaddr_in getoth_addr();
         void setoth_addr(char *hostname, int port);
+        void setoth_addr(struct sockaddr_in new_addr);
 
         static std::vector<std::string> splitMessage(const std::string &message);
         static std::vector<std::string> splitUpToMessage(const std::string &message, int n);
