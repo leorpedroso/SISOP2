@@ -13,6 +13,7 @@ void Interface::run(){
     while(true){
         getline(std::cin, input);
         if(std::cin.eof()){
+            raise(SIGINT);
             break;
         }
 
@@ -36,32 +37,37 @@ void Interface::run(){
             std::cout << "Invalid command." << std::endl;
         }
     }
-
-    raise(SIGINT);
 }
 
-bool Interface::parseString(const std::string &input, std::string &command, std::string &arg){
+bool Interface::parseString(std::string &input, std::string &command, std::string &arg){
+    input.erase(input.find_last_not_of(" \t")+1); 
+    input.erase(0, input.find_first_not_of(" \t"));
+
     std::stringstream ss(input);
-    std::vector<std::string> list;
-    std::string word;
-
-    while (ss >> word && list.size() <= 2) {
-        list.push_back(word);
+    
+    if(!(ss >> command)){
+        command = "";
+        return false;
     }
-
-    if (list.size() != 2){
+    if(!getline(ss, arg)){
+        arg = "";
         return false;
     }
 
-    command = list[0];
-    arg = list[1];
+    arg.erase(arg.find_last_not_of(" \t")+1); 
+    arg.erase(0, arg.find_first_not_of(" \t"));
+
+    if(arg.size() > 128){
+        arg = "";
+        return false;
+    }
 
     return true;
 }
 
 void Interface::follow(const std::string &name) {
     // send follow message.
-    sock.send(sock.FOLLOW + " " + profile +" "+ name);
+    sock.send(sock.FOLLOW + " " + profile + " " + name);
 }
 
 void Interface::send(const std::string &message) {
@@ -70,5 +76,6 @@ void Interface::send(const std::string &message) {
 }
 
 void Interface::updateNotifications(const std::string &notification){
+    // print notifications on screen
     std::cout << notification << std::endl;
 }

@@ -21,7 +21,8 @@ const std::string Socket::SEND_NOTIFICATION = "5";
 const std::string Socket::NOTIFICATION = "6";
 const int Socket::MAX_MESSAGE_SIZE = 256;
 
-Socket::Socket(int port){
+Socket::Socket(int port, bool reuseAddr, bool log){
+    this->log = log;
 	struct sockaddr_in serv_addr;
     clilen = sizeof(struct sockaddr_in);
 		
@@ -36,12 +37,16 @@ Socket::Socket(int port){
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	bzero(&(serv_addr.sin_zero), 8);    
 
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = 100000;
-    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
-        perror("Error");
-    }
+    // TIMEOUT
+    //struct timeval tv;
+    //tv.tv_sec = 0;
+    //tv.tv_usec = 100000;
+    //if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
+    //    perror("Error");
+    //}
+
+    if (reuseAddr)
+        setReuseAddr();
 	 
 	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(struct sockaddr)) < 0) 
 		printf("ERROR on binding");
@@ -56,16 +61,17 @@ void Socket::closeSocket(){
 std::string Socket::listen(){
 	int n;
 	char buf[MAX_MESSAGE_SIZE];
-	
-    n = recvfrom(sockfd, buf, MAX_MESSAGE_SIZE, 0, (struct sockaddr *) &oth_addr, &clilen);
-	if (n < 0) {
+
+	if (connected)
+	    n = recvfrom(sockfd, buf, MAX_MESSAGE_SIZE, 0, (struct sockaddr *) NULL, &clilen);
+    else
+        n = recvfrom(sockfd, buf, MAX_MESSAGE_SIZE, 0, (struct sockaddr *) &oth_addr, &clilen);
+	if (n <= 0) {
         return "";
-		//printf("ERROR on recvfrom");
     }
-    if (n == 0){
-        return "";
-    }
-	printf("Received a datagram: %s\n", buf);
+
+    if(log)
+	    printf("Received a datagram: %s\n", buf);
 
     return std::string(buf);
 }
@@ -75,7 +81,10 @@ void Socket::send(const std::string &message){
     const char *messageC = message.c_str();
 
 	/* send to socket */
-    n = sendto(sockfd, messageC, MAX_MESSAGE_SIZE, 0,(struct sockaddr *) &oth_addr, sizeof(struct sockaddr));
+    if (connected)
+	    n = sendto(sockfd, messageC, MAX_MESSAGE_SIZE, 0,(struct sockaddr *) NULL, sizeof(struct sockaddr));
+    else 
+        n = sendto(sockfd, messageC, MAX_MESSAGE_SIZE, 0,(struct sockaddr *) &oth_addr, sizeof(struct sockaddr));
 
 	if (n  < 0) 
 		printf("ERROR on sendto");
@@ -92,6 +101,22 @@ void Socket::send(const std::string &message, struct sockaddr_in addr){
 		printf("ERROR on sendto");
 }
 
+void Socket::setConnect(){
+    if(connect(sockfd, (struct sockaddr *)&oth_addr, sizeof(oth_addr)) < 0){
+        printf("\n Error : Connect Failed \n");
+    }
+    connected = true;
+}
+
+void Socket::setReuseAddr(){
+    int enable = 1;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(int)) < 0)
+        printf("setsockopt(SO_REUSEADDR) failed");
+}
+
+void Socket::disableLog(){
+    log = false;
+}
 
 struct sockaddr_in Socket::getoth_addr(){
     return oth_addr;
@@ -137,8 +162,13 @@ std::vector<std::string> Socket::splitUpToMessage(const std::string &message, in
     int i = 1;
     while(i < n && stream >> line) {
         spMessage.push_back(line);
+        ++i;
     }
+    
     getline(stream, line);
+    line.erase(line.find_last_not_of(" \t")+1); 
+    line.erase(0, line.find_first_not_of(" \t"));
+
     spMessage.push_back(line);
 
     return spMessage;

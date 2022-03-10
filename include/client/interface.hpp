@@ -8,7 +8,7 @@ class Interface{
         std::string profile;
         Socket sock;
         
-        bool parseString(const std::string &input, std::string &command, std::string &arg);
+        bool parseString(std::string &input, std::string &command, std::string &arg);
         void follow(const std::string &name);
         void send(const std::string &message);
 

@@ -5,6 +5,7 @@
 #include<vector>
 #include<mutex>
 #include<queue>
+#include<unordered_set>
 #include<thread>
 #include<memory>
 #include<condition_variable>
@@ -13,7 +14,7 @@
 class Profile{
     private:
         std::string profileName;
-        std::vector<std::string> followers;
+        std::unordered_set<std::string> followers;
         std::unordered_set<std::string> readMap;
         std::queue<Notification> notifications;
         int numSessions;
@@ -31,14 +32,14 @@ class Profile{
         Profile(const std::string &profileName): profileName(profileName), numSessions(0){};
 
         const std::string &getName() const;
-        std::vector<std::string> getFollowers();
+        std::unordered_set<std::string> getFollowers();
 
-        void putNotification(const std::string &message, const std::string &sender);
+        void putNotification(const std::string &message, const std::string &sender, const std::string &time);
         Notification readNotification(const std::string &id);
         bool canRead(const std::string &id);
 
         void addFollower(const std::string &follower, bool save = false);
-        void notifyFollowers(const std::string &message);
+        void notifyFollowers(const std::string &message, const std::string &time);
 
         void incrementSessions();
         void decrementSessions();

@@ -9,6 +9,10 @@ const std::string &Notification::getSender() const {
     return sender;
 }       
 
+const std::string &Notification::getTime() const {
+    return time;
+}       
+
 void Notification::incrementRead() {
     ++read;
 }

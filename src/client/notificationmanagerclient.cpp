@@ -11,12 +11,12 @@ void NotificationManager::listen(){
         if (input == "")
             continue;
 
-        std::vector<std::string> spMessage = sock.splitUpToMessage(input, 3);
+        std::vector<std::string> spMessage = sock.splitUpToMessage(input, 4);
         std::string type = spMessage[0];
 
         // 2. if is a valid notification use interface.updateNotifications(notification)
         if (type == sock.NOTIFICATION){
-            std::string notification = "@" + spMessage[1] + " - " + spMessage[2];
+            std::string notification = "@" + spMessage[1] + " " + spMessage[2] + "\n " + spMessage[3];
             interface.updateNotifications(notification);
         } else {
             std::cout << "ERROR " << input << std::endl;

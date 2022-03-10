@@ -17,10 +17,11 @@ class Socket{
         struct sockaddr_in addr;
         struct sockaddr_in oth_addr;
         socklen_t clilen;
+        bool log;
         bool connected;
         
     public:
-        const static std::string CONNECT; // profile
+        const static std::string CONNECT;
         const static std::string CONNECT_OK;
         const static std::string CONNECT_NOT_OK;
         const static std::string EXIT;
@@ -29,12 +30,17 @@ class Socket{
         const static std::string NOTIFICATION;
         const static int MAX_MESSAGE_SIZE;
 
-        Socket(int port = 0);
+        Socket(int port = 0, bool reuseAddr = false, bool log = true);
         void closeSocket();
         
         void send(const std::string &message);
         void send(const std::string &message, struct sockaddr_in addr);
         std::string listen();
+
+        void setConnect();
+        void setReuseAddr();
+
+        void disableLog();
 
         struct sockaddr_in getoth_addr();
         void setoth_addr(char *hostname, int port);

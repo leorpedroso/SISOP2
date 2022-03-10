@@ -50,10 +50,18 @@ int main(int argc, char*argv[]) {
         exit(1);
     }
 
+
+    sock.disableLog();
+
     signal(SIGINT, signalHandler);
 
     profile = argv[1];
     ClientArgs clientArgs(argv[1], argv[2], std::stoi(argv[3]));
+
+    if(!(profile.size() >= 4 && profile.size() <= 20)){
+        std::cout << "Profile name needs to be between 4 and 20 chars" << std::endl;
+        exit(1);
+    }
 
     // 1. Send message to server requesting login
     sock.setoth_addr(argv[2], std::stoi(argv[3]));
@@ -67,7 +75,7 @@ int main(int argc, char*argv[]) {
         exit(1);
     } else if(type == sock.CONNECT_OK){
         id = sock.splitUpToMessage(result, 2)[1];
-        std::cout << "OK " << result << std::endl;
+        std::cout << "Starting client" << std::endl;
     } else {
         std::cout << "ERROR " << result << std::endl;
         exit(1);

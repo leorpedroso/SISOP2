@@ -3,9 +3,14 @@
 #include "../../include/server/profilemanager.hpp"
 #include "../../include/server/notification.hpp"
 #include <sstream>
+#include <chrono>
+#include <iomanip>
+#include <ctime>
 
 
-SessionManager::SessionManager(Socket *sock, struct sockaddr_in addr, Profile *_prof): prof(_prof), sock(sock), addr(addr){
+SessionManager::SessionManager(int port, struct sockaddr_in addr, Profile *_prof): prof(_prof), sock(port, true), addr(addr){
+    sock.setoth_addr(addr);
+    sock.setConnect();
 
     profileName = prof->getName();
 
@@ -19,12 +24,9 @@ void SessionManager::send(){
     ss << std::this_thread::get_id();
     send_id = ss.str();
 
-    putSession(send_id, this);
-    putSessionAddr(send_id, &addr);
-
     std::cout << "start thread send: " << send_id << std::endl;
 
-    sock->send(Socket::CONNECT_OK + " " + send_id, addr);
+    sock.send(Socket::CONNECT_OK + " " + send_id);
 
     while(1){
         if (sessionClosed()) break;
@@ -34,11 +36,67 @@ void SessionManager::send(){
             if(notification.getMessage() == "")
                 continue;
             std::cout << "thread: " << send_id << " FROM " << notification.getSender() << " TO " << prof->getName() << " MSG: " << notification.getMessage() << std::endl;
-            sock->send(Socket::NOTIFICATION + " " + notification.getSender() + " " + notification.getMessage(), addr);
+            sock.send(Socket::NOTIFICATION + " " + notification.getSender() + " " + notification.getTime() + " " + notification.getMessage());
         }
     }
 
     std::cout << "end thread send: " << send_id << std::endl;
+}
+
+void SessionManager::listen(){
+    std::stringstream ss;
+    ss << std::this_thread::get_id();
+    listen_id = ss.str();
+
+    std::cout << "start thread listen: " << listen_id << std::endl;
+
+    while(1){
+        std::string message = sock.listen();
+
+        if (message == "")
+            continue;
+
+        auto receiveTime = std::chrono::system_clock::now();
+        std::time_t rec_time = std::chrono::system_clock::to_time_t(receiveTime);
+        std::stringstream bufferTime;
+        bufferTime << std::put_time(std::localtime(&rec_time), "%d/%b/%Y-%H:%M:%S");
+        std::string receiveTimeString = bufferTime.str();
+
+        std::vector<std::string> spMessage = sock.splitUpToMessage(message, 3);
+        std::string type = spMessage[0];
+
+        if (type == Socket::EXIT){
+            std::cout<< "thread: " << listen_id  << " EXIT" << std::endl;
+            std::string prof = spMessage[1];
+            std::string sess = spMessage[2];
+
+            closeSession();
+            getProfile(prof)->decrementSessions();
+            break;
+        } else if (type == Socket::FOLLOW){
+            std::cout<< "thread: " << listen_id  << " FOLLOW" << std::endl;
+
+            std::string prof = spMessage[1];
+            std::string foll = spMessage[2];
+
+            Profile *folProf = getProfile(foll);
+            if (folProf == nullptr){
+                std::cout << "Profile doesn't exist" << std::endl;
+            } else {
+                folProf->addFollower(prof, true);
+            }
+        } else if (type == Socket::SEND_NOTIFICATION){
+            std::cout<< "thread: " << listen_id  << " SEND_NOTIFICATION" << std::endl;
+
+            std::string prof = spMessage[1];
+            std::string msg = spMessage[2];
+
+            getProfile(prof)->notifyFollowers(msg, receiveTimeString);
+        } else {
+            std::cout<< "thread: " << listen_id << " ERROR " + message << std::endl;
+        }
+    }
+    std::cout << "end thread listen: " << listen_id << std::endl;
 }
 
 bool SessionManager::sessionClosed() {
@@ -47,47 +105,7 @@ bool SessionManager::sessionClosed() {
     return returnVal;
 }
 
-
 void SessionManager::closeSession() {
     std::unique_lock<std::mutex> lck(session_mtx);
     session_closed = true;
 }
-
-
-std::unordered_map<std::string, SessionManager*> _sessions;
-std::unordered_map<std::string, struct sockaddr_in *> _sessionAddr;
-std::mutex _sessionsAddrMutex;
-std::mutex _sessionsMutex;
-
-void putSession(const std::string &id, SessionManager* man){
-    std::unique_lock<std::mutex> mlock(_sessionsMutex);
-    _sessions.insert({id, man});
-}
-
-void putSessionAddr(const std::string &id, struct sockaddr_in *addr){
-    std::unique_lock<std::mutex> mlock(_sessionsAddrMutex);
-    _sessionAddr.insert({id, addr});
-}
-
-SessionManager *getSession(const std::string &name){
-    std::unique_lock<std::mutex> mlock(_sessionsMutex);
-
-    auto pos = _sessions.find(name);
-    if(pos == _sessions.end()){
-         return nullptr;
-    } else {
-        return pos->second;
-    }
-}
-
-struct sockaddr_in *getSessionAddr(const std::string &name){
-    std::unique_lock<std::mutex> mlock(_sessionsAddrMutex);
-
-    auto pos = _sessionAddr.find(name);
-    if(pos == _sessionAddr.end()){
-         return nullptr;
-    } else {
-        return pos->second;
-    }
-}
-

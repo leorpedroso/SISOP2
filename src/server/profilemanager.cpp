@@ -5,7 +5,6 @@
 
 std::unordered_map<std::string, Profile*> _profiles;
 std::string _profileFile;
-std::mutex _profileFileMutex;
 std::mutex _profileMapMutex;
 
 void createProfileManager(const std::string &profileFile){
@@ -17,10 +16,9 @@ void printProfiles(){
     std::unique_lock<std::mutex> mlock(_profileMapMutex);
     for(auto &any: _profiles) {
 
-        std::vector<std::string> followers = any.second->getFollowers();
         std::cout << any.second->getName();
 
-        for(const std::string &follower: followers){
+        for(const std::string &follower: any.second->getFollowers()){
             std::cout << " " << follower;
         }
 
@@ -34,10 +32,9 @@ void saveProfiles(){
 
     for(auto any: _profiles) {
 
-        std::vector<std::string> followers = any.second->getFollowers();
         outputFile << any.second->getName();
 
-        for(const std::string &follower: followers){
+        for(const std::string &follower: any.second->getFollowers()){
             outputFile << " " << follower;
         }
 
