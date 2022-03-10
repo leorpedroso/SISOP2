@@ -3,7 +3,7 @@
 #include <sstream>
 #include <iostream>
 
-std::unordered_map<std::string, Profile> _profiles;
+std::unordered_map<std::string, Profile*> _profiles;
 std::string _profileFile;
 std::mutex _profileFileMutex;
 std::mutex _profileMapMutex;
@@ -16,10 +16,9 @@ void createProfileManager(const std::string &profileFile){
 void printProfiles(){
     std::unique_lock<std::mutex> mlock(_profileMapMutex);
     for(auto &any: _profiles) {
-        Profile profile = any.second;
 
-        std::vector<std::string> followers = profile.getFollowers();
-        std::cout << any.second.getName();
+        std::vector<std::string> followers = any.second->getFollowers();
+        std::cout << any.second->getName();
 
         for(const std::string &follower: followers){
             std::cout << " " << follower;
@@ -33,11 +32,10 @@ void printProfiles(){
 void saveProfiles(){
     std::ofstream outputFile(_profileFile, std::ofstream::out | std::ofstream::trunc);
 
-    for(auto &any: _profiles) {
-        Profile profile = any.second;
+    for(auto any: _profiles) {
 
-        std::vector<std::string> followers = profile.getFollowers();
-        outputFile << any.second.getName();
+        std::vector<std::string> followers = any.second->getFollowers();
+        outputFile << any.second->getName();
 
         for(const std::string &follower: followers){
             outputFile << " " << follower;
@@ -62,11 +60,11 @@ void loadProfiles(){
         std::string profile;
         
         stream >> profile;
-        Profile prof = Profile(profile);
+        Profile *prof = new Profile(profile);
         
         std::string follower;
         while(stream >> follower) {
-            prof.addFollower(follower);
+            prof->addFollower(follower);
         }
 
         _profiles.insert(std::make_pair(profile, prof));
@@ -80,7 +78,7 @@ Profile *getProfile(const std::string &name){
     if(pos == _profiles.end()){
          return nullptr;
     } else {
-        return &(pos->second);
+        return pos->second;
     }
 }
 
@@ -92,8 +90,7 @@ void createProfile(const std::string &name){
     if(pos != _profiles.end()){
         return;
     } else {
-        Profile prof(name);
-        _profiles.insert({name, prof});
+        _profiles.insert({name, new Profile(name)});
         saveProfiles();
     }
 }

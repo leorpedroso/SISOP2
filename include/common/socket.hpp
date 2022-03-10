@@ -6,6 +6,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <string>
+#include <sys/time.h>
 #include <netdb.h>
 #include <stdio.h>
 #include <vector>

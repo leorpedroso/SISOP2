@@ -18,6 +18,7 @@ class SessionManager{
     private:
         Socket *sock;
         Profile *prof;
+        std::string profileName;
         std::string send_id;
         struct sockaddr_in addr;
         bool session_closed;
@@ -34,4 +35,6 @@ class SessionManager{
 };
 
 void putSession(const std::string &id, SessionManager* man);
+void putSessionAddr(const std::string &id, struct sockaddr_in *addr);
 SessionManager *getSession(const std::string &name);
+struct sockaddr_in *getSessionAddr(const std::string &name);

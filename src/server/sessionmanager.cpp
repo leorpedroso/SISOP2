@@ -5,32 +5,34 @@
 #include <sstream>
 
 
-extern std::unordered_map<std::string, Profile> _profiles;
-
 SessionManager::SessionManager(Socket *sock, struct sockaddr_in addr, Profile *_prof): prof(_prof), sock(sock), addr(addr){
+
+    profileName = prof->getName();
 
     prof->incrementSessions();
 
     session_closed = false;
-
-    send_thread = std::thread(&SessionManager::send, this);
-    std::stringstream ss;
-    ss << send_thread.get_id();
-    send_id = ss.str();
-    std::cout << send_thread.get_id() << std::endl;
-
-    send_thread.detach();
 }
 
 void SessionManager::send(){    
-    std::cout << "start thread send: " << send_id << std::endl;
+    std::stringstream ss;
+    ss << std::this_thread::get_id();
+    send_id = ss.str();
+
     putSession(send_id, this);
+    putSessionAddr(send_id, &addr);
+
+    std::cout << "start thread send: " << send_id << std::endl;
+
     sock->send(Socket::CONNECT_OK + " " + send_id, addr);
 
     while(1){
         if (sessionClosed()) break;
+
         if(prof->canRead(send_id)) {
             Notification notification = prof->readNotification(send_id);
+            if(notification.getMessage() == "")
+                continue;
             std::cout << "thread: " << send_id << " FROM " << notification.getSender() << " TO " << prof->getName() << " MSG: " << notification.getMessage() << std::endl;
             sock->send(Socket::NOTIFICATION + " " + notification.getSender() + " " + notification.getMessage(), addr);
         }
@@ -53,11 +55,18 @@ void SessionManager::closeSession() {
 
 
 std::unordered_map<std::string, SessionManager*> _sessions;
+std::unordered_map<std::string, struct sockaddr_in *> _sessionAddr;
+std::mutex _sessionsAddrMutex;
 std::mutex _sessionsMutex;
 
 void putSession(const std::string &id, SessionManager* man){
     std::unique_lock<std::mutex> mlock(_sessionsMutex);
     _sessions.insert({id, man});
+}
+
+void putSessionAddr(const std::string &id, struct sockaddr_in *addr){
+    std::unique_lock<std::mutex> mlock(_sessionsAddrMutex);
+    _sessionAddr.insert({id, addr});
 }
 
 SessionManager *getSession(const std::string &name){
@@ -70,3 +79,15 @@ SessionManager *getSession(const std::string &name){
         return pos->second;
     }
 }
+
+struct sockaddr_in *getSessionAddr(const std::string &name){
+    std::unique_lock<std::mutex> mlock(_sessionsAddrMutex);
+
+    auto pos = _sessionAddr.find(name);
+    if(pos == _sessionAddr.end()){
+         return nullptr;
+    } else {
+        return pos->second;
+    }
+}
+

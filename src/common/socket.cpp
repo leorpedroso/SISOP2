@@ -35,6 +35,13 @@ Socket::Socket(int port){
 	    serv_addr.sin_port = 0;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	bzero(&(serv_addr.sin_zero), 8);    
+
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 100000;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
+        perror("Error");
+    }
 	 
 	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(struct sockaddr)) < 0) 
 		printf("ERROR on binding");
@@ -51,8 +58,13 @@ std::string Socket::listen(){
 	char buf[MAX_MESSAGE_SIZE];
 	
     n = recvfrom(sockfd, buf, MAX_MESSAGE_SIZE, 0, (struct sockaddr *) &oth_addr, &clilen);
-	if (n < 0) 
-		printf("ERROR on recvfrom");
+	if (n < 0) {
+        return "";
+		//printf("ERROR on recvfrom");
+    }
+    if (n == 0){
+        return "";
+    }
 	printf("Received a datagram: %s\n", buf);
 
     return std::string(buf);

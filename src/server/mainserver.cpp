@@ -13,6 +13,10 @@ void listenSec(Socket *sock){
 
     while(1){
         std::string message = sock->listen();
+
+        if (message == "")
+            continue;
+
         std::vector<std::string> spMessage = sock->splitUpToMessage(message, 3);
         std::string type = spMessage[0];
 
@@ -51,6 +55,12 @@ void listenSec(Socket *sock){
     std::cout << "end thread listen: "<< std::endl;
 }
 
+void startSendThread(SessionManager *sess){
+    std::thread send_thread = std::thread(&SessionManager::send, sess);
+
+    send_thread.detach();
+}
+
 
 int main(int argc, char*argv[]) {
 
@@ -74,6 +84,8 @@ int main(int argc, char*argv[]) {
     Socket sock(port_prim);
     while(1){
         std::string message = sock.listen();
+        if (message == "")
+            continue;
         std::vector<std::string> spMessage = sock.splitUpToMessage(message, 2);
         std::string type = spMessage[0];
 
@@ -83,9 +95,11 @@ int main(int argc, char*argv[]) {
             if(prof == nullptr){
                 createProfile(name);
                 prof = getProfile(name);
-                SessionManager sess(&sock_sec, sock.getoth_addr(), prof);
+                SessionManager *sess(new SessionManager (&sock_sec, sock.getoth_addr(), prof));
+                startSendThread(sess);
             } else if (prof->getSessions() < prof->MAX_SESSIONS){
-                SessionManager sess(&sock_sec, sock.getoth_addr(), prof);
+                SessionManager *sess(new SessionManager (&sock_sec, sock.getoth_addr(), prof));
+                startSendThread(sess);
             } else {
                 sock.send(sock.CONNECT_NOT_OK + " Profile already has 2 Sessions");
             }

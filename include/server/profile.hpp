@@ -17,19 +17,18 @@ class Profile{
         std::unordered_set<std::string> readMap;
         std::queue<Notification> notifications;
         int numSessions;
-        std::mutex *notificationsMutex;
-        std::mutex *sessionsMutex;
-        std::mutex *readMapMutex;
-        std::mutex *followersMutex;
-        std::condition_variable *notEmpty;
+        std::mutex notificationsMutex;
+        std::mutex sessionsMutex;
+        std::mutex readMapMutex;
+        std::mutex followersMutex;
+        std::condition_variable notEmpty;
         
 
 
     public:
         const static int MAX_SESSIONS;
 
-        Profile(const std::string &profileName);
-        Profile(const Profile &p);
+        Profile(const std::string &profileName): profileName(profileName), numSessions(0){};
 
         const std::string &getName() const;
         std::vector<std::string> getFollowers();

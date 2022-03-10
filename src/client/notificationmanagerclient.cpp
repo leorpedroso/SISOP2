@@ -7,6 +7,10 @@ void NotificationManager::listen(){
     while(1){
         // 1. Listen for notifications
         std::string input = sock.listen();
+
+        if (input == "")
+            continue;
+
         std::vector<std::string> spMessage = sock.splitUpToMessage(input, 3);
         std::string type = spMessage[0];
 
