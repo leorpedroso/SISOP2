@@ -24,7 +24,7 @@ void startListenThread(SessionManager *sess){
 int main(int argc, char*argv[]) {
 
     if (argc < 3) {
-        std::cerr << " ./app_server <porta_primaria> <porta_secundaria>" << std::endl;
+        std::cerr << " " << argv[0] << " <porta_primaria> <porta_secundaria>" << std::endl;
         exit(1);
     }
     

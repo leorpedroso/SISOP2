@@ -46,7 +46,7 @@ void signalHandler(int s){
 int main(int argc, char*argv[]) {
 
     if (argc < 4) {
-        std::cerr << " ./app_cliente <perfil> <endereço do servidor> <porta>" << std::endl;
+        std::cerr << " " << argv[0] << " <perfil> <endereço do servidor> <porta>" << std::endl;
         exit(1);
     }
 
