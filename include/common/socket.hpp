@@ -28,6 +28,7 @@ class Socket{
         const static std::string FOLLOW;
         const static std::string SEND_NOTIFICATION;
         const static std::string NOTIFICATION;
+        const static std::string ACK;
         const static int MAX_MESSAGE_SIZE;
 
         Socket(int port = 0, bool reuseAddr = false, bool log = true);

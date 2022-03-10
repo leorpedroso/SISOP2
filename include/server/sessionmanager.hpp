@@ -3,6 +3,8 @@
 #include <string>
 #include <thread>
 #include <mutex>
+#include <condition_variable>
+#include <queue>
 #include <sys/types.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -25,9 +27,14 @@ class SessionManager{
         bool session_closed;
         std::thread send_thread;
         std::mutex session_mtx;
+        std::mutex ack_mtx;
+        std::condition_variable ack_cv;
+        std::queue<std::string> ack_msgs;
 
         bool sessionClosed();
         void closeSession();
+        void sendAck(std::string msg);
+        void verifySendAck();
 
     public:
         SessionManager(int port, struct sockaddr_in addr, Profile *_prof);

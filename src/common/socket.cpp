@@ -19,6 +19,7 @@ const std::string Socket::EXIT = "3";
 const std::string Socket::FOLLOW = "4";
 const std::string Socket::SEND_NOTIFICATION = "5";
 const std::string Socket::NOTIFICATION = "6";
+const std::string Socket::ACK = "7";
 const int Socket::MAX_MESSAGE_SIZE = 256;
 
 Socket::Socket(int port, bool reuseAddr, bool log){

@@ -23,13 +23,11 @@ void Interface::run(){
             if (command == "FOLLOW") {
                 if (arg != profile){
                     follow(arg);
-                    std::cout << "User followed." << std::endl;
                 } else {
                     std::cout << "Can't follow yourself." << std::endl;
                 }
             } else if (command == "SEND"){
                 send(arg);
-                std::cout << "Message sent." << std::endl;
             } else {
                 std::cout << "Invalid command." << std::endl;    
             }

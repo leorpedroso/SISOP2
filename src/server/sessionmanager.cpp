@@ -17,6 +17,7 @@ SessionManager::SessionManager(int port, struct sockaddr_in addr, Profile *_prof
     prof->incrementSessions();
 
     session_closed = false;
+    
 }
 
 void SessionManager::send(){    
@@ -30,6 +31,8 @@ void SessionManager::send(){
 
     while(1){
         if (sessionClosed()) break;
+
+        verifySendAck();
 
         if(prof->canRead(send_id)) {
             Notification notification = prof->readNotification(send_id);
@@ -81,15 +84,20 @@ void SessionManager::listen(){
 
             Profile *folProf = getProfile(foll);
             if (folProf == nullptr){
+                sendAck("FOLLOW 0");
                 std::cout << "Profile doesn't exist" << std::endl;
             } else {
+                sendAck("FOLLOW 1");
                 folProf->addFollower(prof, true);
             }
+
         } else if (type == Socket::SEND_NOTIFICATION){
             std::cout<< "thread: " << listen_id  << " SEND_NOTIFICATION" << std::endl;
 
             std::string prof = spMessage[1];
             std::string msg = spMessage[2];
+
+            sendAck("SEND");
 
             getProfile(prof)->notifyFollowers(msg, receiveTimeString);
         } else {
@@ -108,4 +116,19 @@ bool SessionManager::sessionClosed() {
 void SessionManager::closeSession() {
     std::unique_lock<std::mutex> lck(session_mtx);
     session_closed = true;
+}
+
+void SessionManager::sendAck(std::string msg) {
+    std::unique_lock<std::mutex> lck(ack_mtx);
+    ack_msgs.push(msg);
+    ack_cv.notify_one();
+}
+
+void SessionManager::verifySendAck() {
+    std::unique_lock<std::mutex> lck(ack_mtx);
+    if (ack_cv.wait_for(lck, std::chrono::microseconds(2), [this]{return !ack_msgs.empty();}) == false)
+        return;
+    std::string msg = ack_msgs.front();
+    ack_msgs.pop();
+    sock.send(Socket::ACK + " " + msg);
 }
