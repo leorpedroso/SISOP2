@@ -35,6 +35,7 @@ class SessionManager{
         void closeSession();
         void sendAck(std::string msg);
         void verifySendAck();
+        std::string getTime();
 
     public:
         SessionManager(int port, struct sockaddr_in addr, Profile *_prof);

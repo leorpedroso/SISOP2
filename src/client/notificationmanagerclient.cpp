@@ -20,12 +20,14 @@ void NotificationManager::listen(){
             interface.updateNotifications(notification);
         } else if (type == sock.ACK) { // verify if message is just an ACK from server
             if (spMessage[1] == "SEND") {
-                std::cout << "Message sent." << std::endl;
+                std::cout << "Server received message \"" << spMessage[2] << "\" at " << spMessage[3] << std::endl;
             } else if (spMessage[1] == "FOLLOW") {
                 if (spMessage[2] == "1") 
-                    std::cout << "Profile followed." << std::endl;
+                    std::cout << "Profile \'" << spMessage[3] << "\' followed." << std::endl;
                 else if (spMessage[2] == "0")
-                    std::cout << "Profile not found in server." << std::endl;
+                    std::cout << "Profile \'" << spMessage[3] << "\' not found in server." << std::endl;
+                else if (spMessage[2] == "2") 
+                    std::cout << "You already follow profile \'" << spMessage[3] << "\'." << std::endl;
                 else 
                     std::cout << "ERROR " << input << std::endl; 
             }

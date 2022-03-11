@@ -61,14 +61,20 @@ bool Profile::canRead(const std::string &id){
     return can;
 }
 
-void Profile::addFollower(const std::string &follower, bool save){
+bool Profile::addFollower(const std::string &follower, bool save){
+    bool alreadyFollows = true;
     followersMutex.lock();
 
-    followers.insert(follower);
+    if (followers.find(follower) == followers.end()) {
+        followers.insert(follower);
+        alreadyFollows = false;
+    }
 
     followersMutex.unlock();
-    if(save)
+    if(save && !alreadyFollows)
         safeSaveProfiles();
+
+    return alreadyFollows;
 }
 
 void Profile::notifyFollowers(const std::string &message, const std::string &time){

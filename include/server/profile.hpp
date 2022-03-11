@@ -38,7 +38,7 @@ class Profile{
         Notification readNotification(const std::string &id);
         bool canRead(const std::string &id);
 
-        void addFollower(const std::string &follower, bool save = false);
+        bool addFollower(const std::string &follower, bool save = false);
         void notifyFollowers(const std::string &message, const std::string &time);
 
         void incrementSessions();

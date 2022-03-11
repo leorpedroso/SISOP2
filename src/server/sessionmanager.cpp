@@ -59,11 +59,7 @@ void SessionManager::listen(){
         if (message == "")
             continue;
 
-        auto receiveTime = std::chrono::system_clock::now();
-        std::time_t rec_time = std::chrono::system_clock::to_time_t(receiveTime);
-        std::stringstream bufferTime;
-        bufferTime << std::put_time(std::localtime(&rec_time), "%d/%b/%Y-%H:%M:%S");
-        std::string receiveTimeString = bufferTime.str();
+        std::string receiveTimeString = getTime();
 
         std::vector<std::string> spMessage = sock.splitUpToMessage(message, 3);
         std::string type = spMessage[0];
@@ -84,11 +80,12 @@ void SessionManager::listen(){
 
             Profile *folProf = getProfile(foll);
             if (folProf == nullptr){
-                sendAck("FOLLOW 0");
+                sendAck("FOLLOW 0 " + foll);
                 std::cout << "Profile doesn't exist" << std::endl;
             } else {
-                sendAck("FOLLOW 1");
-                folProf->addFollower(prof, true);
+                bool alreadyFollows = folProf->addFollower(prof, true);
+                if (alreadyFollows) sendAck("FOLLOW 2 " + foll);
+                else sendAck("FOLLOW 1 " + foll);
             }
 
         } else if (type == Socket::SEND_NOTIFICATION){
@@ -97,7 +94,7 @@ void SessionManager::listen(){
             std::string prof = spMessage[1];
             std::string msg = spMessage[2];
 
-            sendAck("SEND");
+            sendAck("SEND " + msg + " " + receiveTimeString);
 
             getProfile(prof)->notifyFollowers(msg, receiveTimeString);
         } else {
@@ -131,4 +128,12 @@ void SessionManager::verifySendAck() {
     std::string msg = ack_msgs.front();
     ack_msgs.pop();
     sock.send(Socket::ACK + " " + msg);
+}
+
+std::string SessionManager::getTime() {
+    auto receiveTime = std::chrono::system_clock::now();
+    std::time_t rec_time = std::chrono::system_clock::to_time_t(receiveTime);
+    std::stringstream bufferTime;
+    bufferTime << std::put_time(std::localtime(&rec_time), "%d/%b/%Y-%H:%M:%S");
+    return bufferTime.str();
 }
