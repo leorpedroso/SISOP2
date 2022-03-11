@@ -30,6 +30,7 @@ class SessionManager{
         std::mutex ack_mtx;
         std::condition_variable ack_cv;
         std::queue<std::string> ack_msgs;
+        int notif_counter;
 
         bool sessionClosed();
         void closeSession();

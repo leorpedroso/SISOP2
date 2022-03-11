@@ -4,6 +4,7 @@
 #include <sstream>
 #include <vector>
 #include <signal.h>
+#include <utility>
 
 void Interface::run(){
     std::string input;
@@ -73,7 +74,23 @@ void Interface::send(const std::string &message) {
     sock.send(sock.SEND_NOTIFICATION + " " + profile + " " + message);
 }
 
-void Interface::updateNotifications(const std::string &notification){
+void Interface::updateNotifications(int given_counter, const std::string &notification){
     // print notifications on screen
-    std::cout << notification << std::endl;
+    if (notif_counter == given_counter) {
+        std::cout << "Here" << std::endl;
+        notif_buffer.insert(std::make_pair(notif_counter, notification));
+        std::cout << "Here 2" << std::endl;
+        std::unordered_map<int, std::string>::const_iterator next_notif = notif_buffer.find(notif_counter);
+        std::cout << "Here 3" << std::endl;
+        
+        while (next_notif != notif_buffer.end()) {
+            std::cout << next_notif->second << std::endl;
+
+            notif_buffer.erase(notif_counter);
+            notif_counter++;
+            next_notif = notif_buffer.find(notif_counter);
+        }
+    } else if (notif_counter < given_counter) {
+        notif_buffer.insert(std::make_pair(given_counter, notification));
+    }
 }

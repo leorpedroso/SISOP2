@@ -17,7 +17,7 @@ SessionManager::SessionManager(int port, struct sockaddr_in addr, Profile *_prof
     prof->incrementSessions();
 
     session_closed = false;
-    
+    notif_counter = 0;    
 }
 
 void SessionManager::send(){    
@@ -39,7 +39,8 @@ void SessionManager::send(){
             if(notification.getMessage() == "")
                 continue;
             std::cout << "thread: " << send_id << " FROM " << notification.getSender() << " TO " << prof->getName() << " MSG: " << notification.getMessage() << std::endl;
-            sock.send(Socket::NOTIFICATION + " " + notification.getSender() + " " + notification.getTime() + " " + notification.getMessage());
+            sock.send(Socket::NOTIFICATION + " " + std::to_string(notif_counter) + " "  + notification.getSender() + " " + notification.getTime() + " " + notification.getMessage());
+            notif_counter++;
         }
     }
 
@@ -94,7 +95,7 @@ void SessionManager::listen(){
             std::string prof = spMessage[1];
             std::string msg = spMessage[2];
 
-            sendAck("SEND " + msg + " " + receiveTimeString);
+            sendAck("SEND " + receiveTimeString + " " + msg);
 
             getProfile(prof)->notifyFollowers(msg, receiveTimeString);
         } else {
