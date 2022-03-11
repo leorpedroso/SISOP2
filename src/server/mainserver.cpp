@@ -4,20 +4,27 @@
 #include "../../include/server/profilemanager.hpp"
 #include "../../include/server/sessionmanager.hpp"
 #include "../../include/common/socket.hpp"
+#include <memory>
 
 
 const std::string profileFile = "data/users.txt";
 
-void startSendThread(SessionManager *sess){
-    std::thread send_thread = std::thread(&SessionManager::send, sess);
-
-    send_thread.detach();
+void sendThread(std::shared_ptr<SessionManager> sess){
+    sess->send();
 }
 
-void startListenThread(SessionManager *sess){
-    std::thread listen_thread = std::thread(&SessionManager::listen, sess);
+void listenThread(std::shared_ptr<SessionManager> sess){
+    sess->listen();
+}
 
+void startThreads(int port_sec, struct sockaddr_in addr, Profile *_prof){
+    std::shared_ptr<SessionManager> sess = std::make_shared<SessionManager>(port_sec, addr, _prof);
+
+    std::thread listen_thread = std::thread(listenThread, sess);
     listen_thread.detach();
+
+    std::thread send_thread = std::thread(sendThread, sess);
+    send_thread.detach();
 }
 
 
@@ -51,13 +58,9 @@ int main(int argc, char*argv[]) {
             if(prof == nullptr){
                 createProfile(name);
                 prof = getProfile(name);
-                SessionManager *sess(new SessionManager (port_sec, sock.getoth_addr(), prof));
-                startSendThread(sess);
-                startListenThread(sess);
+                startThreads(port_sec, sock.getoth_addr(), prof);
             } else if (prof->getSessions() < prof->MAX_SESSIONS){
-                SessionManager *sess(new SessionManager (port_sec, sock.getoth_addr(), prof));
-                startSendThread(sess);
-                startListenThread(sess);
+                startThreads(port_sec, sock.getoth_addr(), prof);
             } else {
                 sock.send(sock.CONNECT_NOT_OK + " Profile already has 2 Sessions");
             }
