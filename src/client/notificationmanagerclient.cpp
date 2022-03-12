@@ -18,7 +18,7 @@ void NotificationManager::listen(){
         if (type == sock.NOTIFICATION){
             std::string notification = "@" + spMessage[2] + " " + spMessage[3] + "\n " + spMessage[4];
             interface.updateNotifications(stoi(spMessage[1]), notification);
-    } else if (type == sock.ACK) { // verify if message is just an ACK from server
+        } else if (type == sock.ACK) { // verify if message is just an ACK from server
             if (spMessage[1] == "SEND") {
                 std::cout << "Server received message \"";
                 for (int i = 3; i < spMessage.size(); i++) 

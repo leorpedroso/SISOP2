@@ -77,11 +77,8 @@ void Interface::send(const std::string &message) {
 void Interface::updateNotifications(int given_counter, const std::string &notification){
     // print notifications on screen
     if (notif_counter == given_counter) {
-        std::cout << "Here" << std::endl;
         notif_buffer.insert(std::make_pair(notif_counter, notification));
-        std::cout << "Here 2" << std::endl;
         std::unordered_map<int, std::string>::const_iterator next_notif = notif_buffer.find(notif_counter);
-        std::cout << "Here 3" << std::endl;
         
         while (next_notif != notif_buffer.end()) {
             std::cout << next_notif->second << std::endl;

@@ -166,11 +166,12 @@ std::vector<std::string> Socket::splitUpToMessage(const std::string &message, in
         ++i;
     }
     
-    getline(stream, line);
-    line.erase(line.find_last_not_of(" \t")+1); 
-    line.erase(0, line.find_first_not_of(" \t"));
+    if(getline(stream, line)){    
+        line.erase(line.find_last_not_of(" \t")+1); 
+        line.erase(0, line.find_first_not_of(" \t"));
 
-    spMessage.push_back(line);
+        spMessage.push_back(line);
+    }
 
     return spMessage;
 }

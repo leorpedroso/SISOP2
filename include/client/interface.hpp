@@ -16,7 +16,7 @@ class Interface{
         void send(const std::string &message);
 
     public:
-        Interface(const std::string &profile, Socket sock) : profile(profile), sock(sock){}
+        Interface(const std::string &profile, Socket sock) : profile(profile), sock(sock), notif_counter(0) {}
         
         void run();
         void updateNotifications(int given_counter, const std::string &notification);
