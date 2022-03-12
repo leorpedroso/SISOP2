@@ -1,19 +1,20 @@
 OBJDIR = obj
 SRCDIR = src
+INCDIR = include
 FLAGS  = -pthread -std=c++11
 
 MODULES := server client common
 OBJDIRS := $(patsubst %, $(OBJDIR)/%, $(MODULES)) data
 
-STRUCTURE 		:= $(shell find $(SRCDIR) -type d)
-CODES 			:= $(addsuffix /*, $(STRUCTURE))
-CODES			:= $(wildcard $(CODES))
-SRCFILES 		:= $(filter %.cpp,$(CODES))
-OBJFILES 		:= $(subst $(SRCDIR),$(OBJDIR), $(SRCFILES:%.cpp=%.o))
+STRUCTURE 	:= $(shell find $(SRCDIR) -type d)
+CODES 		:= $(addsuffix /*, $(STRUCTURE))
+CODES		:= $(wildcard $(CODES))
+SRCFILES 	:= $(filter %.cpp,$(CODES))
+OBJFILES 	:= $(subst $(SRCDIR),$(OBJDIR), $(SRCFILES:%.cpp=%.o))
 
-SERVEROBJ		:= $(filter $(OBJDIR)/server/%, $(OBJFILES))
-CLIENTOBJ		:= $(filter $(OBJDIR)/client/%, $(OBJFILES))
-COMMONOBJ		:= $(filter $(OBJDIR)/common/%, $(OBJFILES))
+SERVEROBJ	:= $(filter $(OBJDIR)/server/%, $(OBJFILES))
+CLIENTOBJ	:= $(filter $(OBJDIR)/client/%, $(OBJFILES))
+COMMONOBJ	:= $(filter $(OBJDIR)/common/%, $(OBJFILES))
 
 all: client server
 
@@ -34,7 +35,7 @@ builddirs: $(OBJDIRS)
 $(OBJDIRS):
 	mkdir -p $@ 
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(INCDIR)/%.hpp
 	g++ -c $< -o $@ $(FLAGS)
 
 clean:
