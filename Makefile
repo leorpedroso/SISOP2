@@ -35,7 +35,7 @@ builddirs: $(OBJDIRS)
 $(OBJDIRS):
 	mkdir -p $@ 
 
-$(OBJDIR)/%.o: $(SRCDIR)/%.cpp $(INCDIR)/%.hpp
+$(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 	g++ -c $< -o $@ $(FLAGS)
 
 clean:
