@@ -12,16 +12,24 @@ void NotificationManager::listen(){
             continue;
 
         std::vector<std::string> spMessage = sock.splitUpToMessage(input, 2);
+        if(spMessage.size() < 2)
+            continue;
+
         std::string type = spMessage[0];
 
         // 2. if is a valid notification use interface.updateNotifications(notification)
         if (type == sock.NOTIFICATION){
             spMessage = sock.splitUpToMessage(spMessage[1], 4);
+            if(spMessage.size() < 4)
+                continue;
+
             std::string notification = "@" + spMessage[1] + " " + spMessage[2] + "\n " + spMessage[3];
             interface.updateNotifications(stoi(spMessage[0]), notification);
         } else if (type == sock.ACK) { 
             // 3. if message is an ACK from operations SEND or FOLLOW
             spMessage = sock.splitUpToMessage(spMessage[1], 3);
+            if(spMessage.size() < 3)
+                continue;
             
             if (spMessage[0] == "SEND") {
                 // 3.1. if ACK is from SEND, print timestamp and message that the server received

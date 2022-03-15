@@ -63,6 +63,9 @@ void SessionManager::listen(){
         std::string receiveTimeString = getTime();
 
         std::vector<std::string> spMessage = sock.splitUpToMessage(message, 3);
+        if(spMessage.size() < 3)
+            continue;
+
         std::string type = spMessage[0];
 
         if (type == Socket::EXIT){

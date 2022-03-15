@@ -63,17 +63,22 @@ int main(int argc, char*argv[]) {
         exit(1);
     }
 
-    // 1. Send message to server requesting login
+    // Send message to server requesting login
     sock.setoth_addr(argv[2], std::stoi(argv[3]));
     sock.send(sock.CONNECT + " " + clientArgs.profile);
 
-    // 2. if result==OK continue else exit(1)
+    // if result==OK continue else exit(1)
     std::string result = sock.listen();
     std::string type = sock.getTypeMessage(result);
     if (type == sock.CONNECT_NOT_OK){
         std::cout << "ERROR " << result << std::endl;
         exit(1);
     } else if(type == sock.CONNECT_OK){
+        std::vector<std::string> spMessage = sock.splitUpToMessage(result, 2);
+        if(spMessage.size() < 2){
+            std::cout << "ERROR " << result << std::endl;
+            exit(1);
+        }
         id = sock.splitUpToMessage(result, 2)[1];
         std::cout << "Starting client" << std::endl;
     } else {

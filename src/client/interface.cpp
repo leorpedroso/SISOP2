@@ -65,17 +65,14 @@ bool Interface::parseString(std::string &input, std::string &command, std::strin
 }
 
 void Interface::follow(const std::string &name) {
-    // send follow message.
     sock.send(sock.FOLLOW + " " + profile + " " + name);
 }
 
 void Interface::send(const std::string &message) {
-    // send message to followers.
     sock.send(sock.SEND_NOTIFICATION + " " + profile + " " + message);
 }
 
 void Interface::updateNotifications(int given_counter, const std::string &notification){
-    // print notifications on screen
     if (notif_counter == given_counter) {
         notif_buffer.insert(std::make_pair(notif_counter, notification));
         std::unordered_map<int, std::string>::const_iterator next_notif = notif_buffer.find(notif_counter);
@@ -87,7 +84,7 @@ void Interface::updateNotifications(int given_counter, const std::string &notifi
             notif_counter++;
             next_notif = notif_buffer.find(notif_counter);
         }
-    } else if (notif_counter < given_counter) {
+    } else {
         notif_buffer.insert(std::make_pair(given_counter, notification));
     }
 }

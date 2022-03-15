@@ -3,8 +3,11 @@
 #include <sstream>
 #include <iostream>
 
+// profiles map
 std::unordered_map<std::string, Profile*> _profiles;
+// profile file
 std::string _profileFile;
+// mutex for profiles
 std::mutex _profileMapMutex;
 
 void createProfileManager(const std::string &profileFile){
@@ -22,11 +25,11 @@ void printProfiles(){
             std::cout << " " << follower;
         }
 
-    std::cout << std::endl;
+        std::cout << std::endl;
     }
 }
 
-
+// DOESN'T USE MUTEX FOR SAVE
 void saveProfiles(){
     std::ofstream outputFile(_profileFile, std::ofstream::out | std::ofstream::trunc);
 
@@ -44,6 +47,7 @@ void saveProfiles(){
     outputFile.close();
 }
 
+// DOESN'T USE MUTEX FOR LOAD
 void loadProfiles(){
     std::ifstream inputFile(_profileFile);
 
@@ -92,6 +96,7 @@ void createProfile(const std::string &name){
     }
 }
 
+// USES MUTEX FOR SAVE
 void safeSaveProfiles(){
     std::unique_lock<std::mutex> mlock(_profileMapMutex);
     saveProfiles();

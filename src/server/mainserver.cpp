@@ -7,7 +7,7 @@
 #include <memory>
 
 
-const std::string profileFile = "data/users.txt";
+const std::string profileFile = "users.txt";
 
 void sendThread(std::shared_ptr<SessionManager> sess){
     sess->send();
@@ -46,14 +46,22 @@ int main(int argc, char*argv[]) {
 
     Socket sock(port_prim);
     while(1){
+
+        // listen for messages
         std::string message = sock.listen();
         if (message == "")
             continue;
         std::vector<std::string> spMessage = sock.splitUpToMessage(message, 2);
+        if(spMessage.size() < 2)
+                continue;
+
         std::string type = spMessage[0];
 
+        // check for type
         if(type == Socket::CONNECT){
             std::string name = spMessage[1];
+
+            // check if profile exists
             Profile *prof = getProfile(name);
             if(prof == nullptr){
                 createProfile(name);

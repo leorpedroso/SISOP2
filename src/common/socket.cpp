@@ -38,16 +38,8 @@ Socket::Socket(int port, bool reuseAddr, bool log){
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	bzero(&(serv_addr.sin_zero), 8);    
 
-    // TIMEOUT
-    //struct timeval tv;
-    //tv.tv_sec = 0;
-    //tv.tv_usec = 100000;
-    //if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
-    //    perror("Error");
-    //}
-
     if (reuseAddr)
-        setReuseAddr();
+        setReusePort();
 	 
 	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(struct sockaddr)) < 0) 
 		printf("ERROR on binding");
@@ -109,7 +101,7 @@ void Socket::setConnect(){
     connected = true;
 }
 
-void Socket::setReuseAddr(){
+void Socket::setReusePort(){
     int enable = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(int)) < 0)
         printf("setsockopt(SO_REUSEADDR) failed");

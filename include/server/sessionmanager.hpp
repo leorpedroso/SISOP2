@@ -18,28 +18,48 @@
 
 class SessionManager{
     private:
-        Socket sock;
-        Profile *prof;
-        std::string profileName;
-        std::string send_id;
-        std::string listen_id;
-        struct sockaddr_in addr;
-        bool session_closed;
-        std::thread send_thread;
-        std::mutex session_mtx;
-        std::mutex ack_mtx;
-        std::condition_variable ack_cv;
-        std::queue<std::string> ack_msgs;
-        int notif_counter;
+        Socket sock; // socket
+        Profile *prof; // profile
 
+        std::string profileName; // profile name
+
+        std::string send_id; // send thread id
+        std::string listen_id; // listen thread id
+
+        struct sockaddr_in addr; // addr
+
+        bool session_closed; // boolean for checking if the session is closed
+
+        std::mutex session_mtx; // mutex for session_closed variable
+        std::mutex ack_mtx; // mutex for ack_msgs queue
+
+        std::condition_variable ack_cv; // condition variable that indicates that ack_msgs is not empty
+
+        std::queue<std::string> ack_msgs; // queue for ack messages
+
+        int notif_counter; // seqn for notifications
+
+        // checks if a sessions is closed
         bool sessionClosed();
+
+        // closes session
         void closeSession();
+
+        // adds ack message to buffer
         void sendAck(std::string msg);
+
+        // sends ack message
         void verifySendAck();
+
+        // returns current time
         std::string getTime();
 
     public:
         SessionManager(int port, struct sockaddr_in addr, Profile *_prof);
+
+        // send loop
         void send();
+
+        // listen loop
         void listen();
 };

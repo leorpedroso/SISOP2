@@ -4,7 +4,7 @@ INCDIR = include
 FLAGS  = -pthread -std=c++11
 
 MODULES := server client common
-OBJDIRS := $(patsubst %, $(OBJDIR)/%, $(MODULES)) data
+OBJDIRS := $(patsubst %, $(OBJDIR)/%, $(MODULES))
 
 STRUCTURE 	:= $(shell find $(SRCDIR) -type d)
 CODES 		:= $(addsuffix /*, $(STRUCTURE))
