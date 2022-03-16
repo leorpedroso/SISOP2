@@ -12,6 +12,7 @@
 #include <strings.h>
 #include <stdio.h>
 
+// Command constants recognized by the client and server
 const std::string Socket::CONNECT = "0";
 const std::string Socket::CONNECT_OK = "1";
 const std::string Socket::CONNECT_NOT_OK = "2";
@@ -22,6 +23,7 @@ const std::string Socket::NOTIFICATION = "6";
 const std::string Socket::ACK = "7";
 const int Socket::MAX_MESSAGE_SIZE = 256;
 
+// Opens socket connection that will be used between server and client
 Socket::Socket(int port, bool reuseAddr, bool log){
     this->log = log;
 	struct sockaddr_in serv_addr;
@@ -37,20 +39,23 @@ Socket::Socket(int port, bool reuseAddr, bool log){
 	    serv_addr.sin_port = 0;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	bzero(&(serv_addr.sin_zero), 8);    
-
+ 
     if (reuseAddr)
         setReusePort();
-	 
+	
+    // In case of error to bind, the connection flag is set to false
 	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(struct sockaddr)) < 0) 
 		printf("ERROR on binding");
 
     connected = false;
 }
 
+// Close connection through socket
 void Socket::closeSocket(){
     close(sockfd);
 }
 
+// Listens to message been received through the bind port if the connection is working
 std::string Socket::listen(){
 	int n;
 	char buf[MAX_MESSAGE_SIZE];
@@ -59,41 +64,40 @@ std::string Socket::listen(){
 	    n = recvfrom(sockfd, buf, MAX_MESSAGE_SIZE, 0, (struct sockaddr *) NULL, &clilen);
     else
         n = recvfrom(sockfd, buf, MAX_MESSAGE_SIZE, 0, (struct sockaddr *) &oth_addr, &clilen);
+    // Returns an empty message in case of fail to receive
 	if (n <= 0) {
         return "";
     }
 
     if(log)
 	    printf("Received a datagram: %s\n", buf);
-
     return std::string(buf);
 }
 
+// Sends a message through the bind port without an address defined
 void Socket::send(const std::string &message){
 	int n;
     const char *messageC = message.c_str();
-
-	/* send to socket */
     if (connected)
 	    n = sendto(sockfd, messageC, MAX_MESSAGE_SIZE, 0,(struct sockaddr *) NULL, sizeof(struct sockaddr));
     else 
         n = sendto(sockfd, messageC, MAX_MESSAGE_SIZE, 0,(struct sockaddr *) &oth_addr, sizeof(struct sockaddr));
-
+    // Returns an error in case of fail to send
 	if (n  < 0) 
 		printf("ERROR on sendto");
 }
 
+// Sends a message through the bind port if the connection is working
 void Socket::send(const std::string &message, struct sockaddr_in addr){
 	int n;
     const char *messageC = message.c_str();
-
-	/* send to socket */
     n = sendto(sockfd, messageC, MAX_MESSAGE_SIZE, 0,(struct sockaddr *) &addr, sizeof(struct sockaddr));
-
+    // Returns an error in case of fail to send
 	if (n  < 0) 
 		printf("ERROR on sendto");
 }
 
+// Connect to the socket if the connection is working properly
 void Socket::setConnect(){
     if(connect(sockfd, (struct sockaddr *)&oth_addr, sizeof(oth_addr)) < 0){
         printf("\n Error : Connect Failed \n");
@@ -101,73 +105,72 @@ void Socket::setConnect(){
     connected = true;
 }
 
+// Sets an reusable port
 void Socket::setReusePort(){
     int enable = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(int)) < 0)
         printf("setsockopt(SO_REUSEADDR) failed");
 }
 
+// Disable the connection logs from server or client
 void Socket::disableLog(){
     log = false;
 }
 
+// Gets the socket authentification address
 struct sockaddr_in Socket::getoth_addr(){
     return oth_addr;
 }
 
+// Sets the authentification address based on the host and the bind port, if it exists
 void Socket::setoth_addr(char *hostname, int port){
     struct hostent *server = gethostbyname(hostname);
     struct sockaddr_in new_addr;
-
 	if (server == NULL) {
         fprintf(stderr,"ERROR, no such host\n");
     }
-	
 	new_addr.sin_family = AF_INET;     
 	new_addr.sin_port = htons(port);    
 	new_addr.sin_addr = *((struct in_addr *)server->h_addr);
 	bzero(&(new_addr.sin_zero), 8);  
-
     oth_addr = new_addr;
 }
 
+// Sets the authentification address to a new one
 void Socket::setoth_addr(struct sockaddr_in new_addr){
     oth_addr = new_addr;
 }
 
+// Splits a message in lines, reading from a stream object
 std::vector<std::string> Socket::splitMessage(const std::string &message){
     std::vector<std::string> spMessage;
-    std::stringstream stream(message);
-    
+    std::stringstream stream(message);   
     std::string line;
     while(stream >> line) {
         spMessage.push_back(line);
     }
-
     return spMessage;
 }
 
+// Splits up a message using the tab command 
 std::vector<std::string> Socket::splitUpToMessage(const std::string &message, int n){
     std::vector<std::string> spMessage;
-    std::stringstream stream(message);
-    
+    std::stringstream stream(message);   
     std::string line;
     int i = 1;
     while(i < n && stream >> line) {
         spMessage.push_back(line);
         ++i;
-    }
-    
+    }  
     if(getline(stream, line)){    
         line.erase(line.find_last_not_of(" \t")+1); 
         line.erase(0, line.find_first_not_of(" \t"));
-
         spMessage.push_back(line);
     }
-
     return spMessage;
 }
 
+// Returns only the first line of the stream, witch should contain the type of message
 std::string Socket::getTypeMessage(const std::string &message){
     std::stringstream stream(message);
     std::string line;
