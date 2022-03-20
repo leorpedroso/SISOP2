@@ -56,6 +56,7 @@ class SessionManager{
 
     public:
         SessionManager(int port, struct sockaddr_in addr, Profile *_prof);
+        ~SessionManager();
 
         // send loop
         void send();

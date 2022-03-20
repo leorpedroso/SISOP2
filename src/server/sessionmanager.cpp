@@ -17,6 +17,10 @@ SessionManager::SessionManager(int port, struct sockaddr_in addr, Profile *_prof
     notif_counter = 0;    
 }
 
+SessionManager::~SessionManager(){
+    sock.closeSocket();
+}
+
 // Sends notifications to a client
 void SessionManager::send(){    
     // Gets the thread ID
