@@ -6,29 +6,37 @@
 #include <signal.h>
 #include <utility>
 
+// Runs interface of client to treat input and output messages
 void Interface::run(){
     std::string input;
     std::string command;
     std::string arg;
 
     while(true){
+        // Reads the user input
         getline(std::cin, input);
         if(std::cin.eof()){
             raise(SIGINT);
             break;
         }
-
         bool valid = parseString(input, command, arg);
 
+        // If it is a valid user input, treat the command
         if (valid){
+
+            // If it is a FOLLOW, check if it the argument is not its own profile and executes the follow method (which sends a message to the server to follow the given profile)
             if (command == "FOLLOW") {
                 if (arg != profile){
                     follow(arg);
                 } else {
                     std::cout << "Can't follow yourself." << std::endl;
                 }
+
+            // If it is a SEND, sends the message
             } else if (command == "SEND"){
                 send(arg);
+
+            // Error message to the user in case of invalid command
             } else {
                 std::cout << "Invalid command." << std::endl;    
             }
@@ -38,12 +46,12 @@ void Interface::run(){
     }
 }
 
+// Gets the command and the arguments from splitting the input user string
 bool Interface::parseString(std::string &input, std::string &command, std::string &arg){
     input.erase(input.find_last_not_of(" \t")+1); 
     input.erase(0, input.find_first_not_of(" \t"));
 
     std::stringstream ss(input);
-    
     if(!(ss >> command)){
         command = "";
         return false;
@@ -55,31 +63,31 @@ bool Interface::parseString(std::string &input, std::string &command, std::strin
 
     arg.erase(arg.find_last_not_of(" \t")+1); 
     arg.erase(0, arg.find_first_not_of(" \t"));
-
     if(arg.size() > 128){
         arg = "";
         return false;
     }
-
     return true;
 }
 
+// Sends to the server the FOLLOW command with current client's profile name and the profile name to be followed
 void Interface::follow(const std::string &name) {
     sock.send(sock.FOLLOW + " " + profile + " " + name);
 }
 
+// Sends the NOTIFICATION command to the server with the current client's profile and the message
+// Sends a message to the server in order for it to reach all of its followers
 void Interface::send(const std::string &message) {
     sock.send(sock.SEND_NOTIFICATION + " " + profile + " " + message);
 }
 
+// Output for the user all its received notifications
 void Interface::updateNotifications(int given_counter, const std::string &notification){
     if (notif_counter == given_counter) {
         notif_buffer.insert(std::make_pair(notif_counter, notification));
-        std::unordered_map<int, std::string>::const_iterator next_notif = notif_buffer.find(notif_counter);
-        
+        std::unordered_map<int, std::string>::const_iterator next_notif = notif_buffer.find(notif_counter);        
         while (next_notif != notif_buffer.end()) {
             std::cout << next_notif->second << std::endl;
-
             notif_buffer.erase(notif_counter);
             notif_counter++;
             next_notif = notif_buffer.find(notif_counter);
