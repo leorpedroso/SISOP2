@@ -37,7 +37,7 @@ class Socket{
         // max size for a socket message
         const static int MAX_MESSAGE_SIZE;
 
-        Socket(int port = 0, bool reuseAddr = false, bool log = true);
+        Socket(int port = 0, bool reusePort = false, bool log = true);
 
         // closes socket
         void closeSocket();

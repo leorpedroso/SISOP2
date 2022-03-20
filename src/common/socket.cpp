@@ -24,7 +24,7 @@ const std::string Socket::ACK = "7";
 const int Socket::MAX_MESSAGE_SIZE = 256;
 
 // Opens socket connection that will be used between server and client
-Socket::Socket(int port, bool reuseAddr, bool log){
+Socket::Socket(int port, bool reusePort, bool log){
     this->log = log;
 	struct sockaddr_in serv_addr;
     clilen = sizeof(struct sockaddr_in);
@@ -40,7 +40,7 @@ Socket::Socket(int port, bool reuseAddr, bool log){
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	bzero(&(serv_addr.sin_zero), 8);    
  
-    if (reuseAddr)
+    if (reusePort)
         setReusePort();
 	
     // In case of error to bind, the connection flag is set to false
@@ -109,7 +109,7 @@ void Socket::setConnect(){
 void Socket::setReusePort(){
     int enable = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(int)) < 0)
-        printf("setsockopt(SO_REUSEADDR) failed");
+        printf("setsockopt(SO_REUSEPORT) failed");
 }
 
 // Disable the connection logs from server or client
