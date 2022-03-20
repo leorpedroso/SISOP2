@@ -6,24 +6,24 @@
 #include "../../include/common/socket.hpp"
 #include <memory>
 
-// This file contains all users saved on the server, that exists and logged in the server
+// This file contains all users saved on the server, that exist and logged in the server at some point
 const std::string profileFile = "users.txt";
 
-// Runs the send of the server session manager
+// Runs the the session manager's send method. (Required to create a send thread correctly)
 void sendThread(std::shared_ptr<SessionManager> sess){
     sess->send();
 }
 
-// Runs the listen of the server session manager
+// Runs the the session manager's listen method. (Required to create a listen thread correctly)
 void listenThread(std::shared_ptr<SessionManager> sess){
     sess->listen();
 }
 
-// Runs all the server threads
+// Creates threads for a new open session.
 void startThreads(int port_sec, struct sockaddr_in addr, Profile *_prof){
-    // Creates the session manager
+    // Creates a new session manager
     std::shared_ptr<SessionManager> sess = std::make_shared<SessionManager>(port_sec, addr, _prof);
-    // Creates the listen and send threads
+    // Creates the listen and send threads to the new open session
     std::thread listen_thread = std::thread(listenThread, sess);
     listen_thread.detach();
     std::thread send_thread = std::thread(sendThread, sess);
@@ -31,7 +31,7 @@ void startThreads(int port_sec, struct sockaddr_in addr, Profile *_prof){
 }
 
 int main(int argc, char*argv[]) {
-    // Receiver start client arguments: profile, connection port for clients and connection port for the server
+    // Server arguments: connection port to listen for new sessions and port to handle open sessions messages
     if (argc < 3) {
         std::cerr << " " << argv[0] << " <porta_primaria> <porta_secundaria>" << std::endl;
         exit(1);
@@ -59,7 +59,7 @@ int main(int argc, char*argv[]) {
         if(type == Socket::CONNECT){
             std::string name = spMessage[1];
 
-            // Check if the client profile exists, and if not, creates one
+            // Checks if the client profile exists, and if not, creates one
             Profile *prof = getProfile(name);
             if(prof == nullptr){
                 createProfile(name);
@@ -68,7 +68,7 @@ int main(int argc, char*argv[]) {
             } else if (prof->getSessions() < prof->MAX_SESSIONS){
                 startThreads(port_sec, sock.getoth_addr(), prof);
 
-            // Prevents the client to have more than two active sessions 
+            // Prevents clients from having more than two active sessions 
             } else {
                 sock.send(sock.CONNECT_NOT_OK + " Profile already has 2 Sessions");
             }
