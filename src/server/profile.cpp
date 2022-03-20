@@ -6,18 +6,18 @@
 // Constant of maximum number of sessions that a client can have active 
 const int Profile::MAX_SESSIONS = 2;
 
-// Returns the profile name of a client
+// Returns the profile name
 const std::string &Profile::getName() const{
     return profileName;
 }
 
-// Returns the current followers of a profile client, uses a mutex to avoid wrong data
+// Returns the current profile followers. Uses a mutex to avoid problems, as this data can be accessed/modified by multiple threads
 std::unordered_set<std::string> Profile::getFollowers(){
     std::unique_lock<std::mutex> mlock(followersMutex);
     return followers;
 };
 
-// Sends the profile notification, uses a mutex to avoid miss data on the send
+// Sends the profile notification, uses a mutex to avoid sending corrupted data or sending to wrong subscribers
 void Profile::putNotification(const std::string &message, const std::string &sender, const std::string &time){
     notificationsMutex.lock();
     notifications.push(Notification(message, sender, time));
@@ -29,7 +29,7 @@ void Profile::putNotification(const std::string &message, const std::string &sen
 Notification Profile::readNotification(const std::string &id){
     std::unique_lock<std::mutex> mlock(notificationsMutex);
 
-    // Waits for an not empty message
+    // Checks if notification buffer is empty. If it is, blocks the thread until a notify or a timeout. In case of a timeout, returns an empty notification, otherwise it continues the notification reading process.
     if (notEmpty.wait_for(mlock, std::chrono::microseconds(2), [this]{return !notifications.empty();}) == false)
         return Notification("", "", "");
     Notification &notificationRef = notifications.front();
@@ -60,7 +60,7 @@ bool Profile::canRead(const std::string &id){
     return can;
 }
 
-// If gets a message asking to follow someone, add a follower on the list for a client
+// Adds the given follower the profile's follower list
 // Uses mutex to avoid miss data
 bool Profile::addFollower(const std::string &follower, bool save){
     bool alreadyFollows = true;
@@ -77,28 +77,28 @@ bool Profile::addFollower(const std::string &follower, bool save){
     return alreadyFollows;
 }
 
-// Sends a message to a profile that other clients are following it
+// Sends received notification to the profile's followers
 void Profile::notifyFollowers(const std::string &message, const std::string &time){
     for (auto fol:getFollowers()){
         getProfile(fol)->putNotification(message, profileName, time);
     }
 }
 
-// Add a client session for a profile, uses mutex to avoid wrong data
+// Increases the profile's open sessions counter, uses mutex to avoid wrong data
 void Profile::incrementSessions(){
     sessionsMutex.lock();
     ++numSessions;
     sessionsMutex.unlock();
 }
 
-// Remove a client session for a profile, uses mutex to avoid wrong data
+// Decreases the profile's open sessions counter, uses mutex to avoid wrong data
 void Profile::decrementSessions(){
     sessionsMutex.lock();
     --numSessions;
     sessionsMutex.unlock();
 }
 
-// Gets the current number of client sessions that a profile, uses mutex to avoid wrong data
+// Gets the current number of client sessions that the profile has, uses mutex to avoid wrong data
 int Profile::getSessions(){
     sessionsMutex.lock();
     int val = numSessions;
