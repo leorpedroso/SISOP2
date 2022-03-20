@@ -128,6 +128,7 @@ void Socket::setoth_addr(char *hostname, int port){
     struct sockaddr_in new_addr;
 	if (server == NULL) {
         fprintf(stderr,"ERROR, no such host\n");
+        exit(1);
     }
 	new_addr.sin_family = AF_INET;     
 	new_addr.sin_port = htons(port);    
