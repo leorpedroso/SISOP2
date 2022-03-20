@@ -55,7 +55,7 @@ void Socket::closeSocket(){
     close(sockfd);
 }
 
-// Listens to message been received through the bind port if the connection is working
+// Listens to message being received through the bind port if the connection is working
 std::string Socket::listen(){
 	int n;
 	char buf[MAX_MESSAGE_SIZE];
@@ -64,7 +64,7 @@ std::string Socket::listen(){
 	    n = recvfrom(sockfd, buf, MAX_MESSAGE_SIZE, 0, (struct sockaddr *) NULL, &clilen);
     else
         n = recvfrom(sockfd, buf, MAX_MESSAGE_SIZE, 0, (struct sockaddr *) &oth_addr, &clilen);
-    // Returns an empty message in case of fail to receive
+    // Returns an empty message in case of a receive timeout or fail
 	if (n <= 0) {
         return "";
     }
@@ -82,7 +82,7 @@ void Socket::send(const std::string &message){
 	    n = sendto(sockfd, messageC, MAX_MESSAGE_SIZE, 0,(struct sockaddr *) NULL, sizeof(struct sockaddr));
     else 
         n = sendto(sockfd, messageC, MAX_MESSAGE_SIZE, 0,(struct sockaddr *) &oth_addr, sizeof(struct sockaddr));
-    // Returns an error in case of fail to send
+    // Returns an error if the send fails
 	if (n  < 0) 
 		printf("ERROR on sendto");
 }
@@ -92,7 +92,7 @@ void Socket::send(const std::string &message, struct sockaddr_in addr){
 	int n;
     const char *messageC = message.c_str();
     n = sendto(sockfd, messageC, MAX_MESSAGE_SIZE, 0,(struct sockaddr *) &addr, sizeof(struct sockaddr));
-    // Returns an error in case of fail to send
+    // Returns an error if send fails
 	if (n  < 0) 
 		printf("ERROR on sendto");
 }
@@ -105,7 +105,7 @@ void Socket::setConnect(){
     connected = true;
 }
 
-// Sets an reusable port
+// Sets a reusable port
 void Socket::setReusePort(){
     int enable = 1;
     if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEPORT, &enable, sizeof(int)) < 0)
@@ -117,12 +117,12 @@ void Socket::disableLog(){
     log = false;
 }
 
-// Gets the socket authentification address
+// Gets the socket authentication address
 struct sockaddr_in Socket::getoth_addr(){
     return oth_addr;
 }
 
-// Sets the authentification address based on the host and the bind port, if it exists
+// Sets the authentication address based on the host and the bind port, if it exists
 void Socket::setoth_addr(char *hostname, int port){
     struct hostent *server = gethostbyname(hostname);
     struct sockaddr_in new_addr;
@@ -136,7 +136,7 @@ void Socket::setoth_addr(char *hostname, int port){
     oth_addr = new_addr;
 }
 
-// Sets the authentification address to a new one
+// Sets the authentication address to a new one
 void Socket::setoth_addr(struct sockaddr_in new_addr){
     oth_addr = new_addr;
 }
@@ -152,7 +152,7 @@ std::vector<std::string> Socket::splitMessage(const std::string &message){
     return spMessage;
 }
 
-// Splits up a message using the tab command 
+// Splits up a message using the horizontal tab character 
 std::vector<std::string> Socket::splitUpToMessage(const std::string &message, int n){
     std::vector<std::string> spMessage;
     std::stringstream stream(message);   
@@ -170,7 +170,7 @@ std::vector<std::string> Socket::splitUpToMessage(const std::string &message, in
     return spMessage;
 }
 
-// Returns only the first line of the stream, witch should contain the type of message
+// Returns only the first line of the stream, which should contain the type of message
 std::string Socket::getTypeMessage(const std::string &message){
     std::stringstream stream(message);
     std::string line;
