@@ -10,13 +10,13 @@ std::string _profileFile;
 // Mutex for profiles map
 std::mutex _profileMapMutex;
 
-// Init Manager for the profiles and gets all the current profiles
+// Initialize profiles manager and gets all the current profiles
 void createProfileManager(const std::string &profileFile){
     _profileFile = profileFile;
     loadProfiles();
 }
 
-// Print on the server screen all the profiles saved and they followers
+// Print on the server screen all the profiles saved and their followers
 void printProfiles(){
     std::unique_lock<std::mutex> mlock(_profileMapMutex);
     for(auto &any: _profiles) {
@@ -29,7 +29,7 @@ void printProfiles(){
 }
 
 // Save the current profiles into the profile file
-// Doen't need to use a mutex for saving
+// Doesn't need to use a mutex for saving
 void saveProfiles(){
     std::ofstream outputFile(_profileFile, std::ofstream::out | std::ofstream::trunc);
     for(auto any: _profiles) {
@@ -43,15 +43,15 @@ void saveProfiles(){
 }
 
 // Loads all the profiles on the profile file into the server memory
-// Doen't need to use a mutex for loading
+// Doesn't need to use a mutex for loading
 void loadProfiles(){
     std::ifstream inputFile(_profileFile);
-    // If the file ins't open, it can't be read
+    // If the file isn't open, it can't be read
     if (!inputFile.is_open()) {
         return;
     }
 
-    // Treats all lines from the file to get the data
+    // Treats all lines from the file to get the profiles data
     std::string line;
     while(getline(inputFile, line)) {
         std::stringstream stream(line);
@@ -66,7 +66,7 @@ void loadProfiles(){
     }
 }
 
-// Get the profile using the name, uses mutex to avoid wrong data
+// Gets the profile using its name, uses mutex to avoid wrong data
 Profile *getProfile(const std::string &name){
     std::unique_lock<std::mutex> mlock(_profileMapMutex);
     auto pos = _profiles.find(name);

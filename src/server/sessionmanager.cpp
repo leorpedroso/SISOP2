@@ -19,7 +19,7 @@ SessionManager::SessionManager(int port, struct sockaddr_in addr, Profile *_prof
 
 // Sends notifications to a client
 void SessionManager::send(){    
-    // Gets a valid ID
+    // Gets the thread ID
     std::stringstream ss;
     ss << std::this_thread::get_id();
     send_id = ss.str();
@@ -31,13 +31,13 @@ void SessionManager::send(){
         if (sessionClosed()) break;
         verifySendAck();
 
-        // Reads an notification waiting to be send to the client
+        // Checks if there is a notification waiting to be sent to the client
         if(prof->canRead(send_id)) {
             Notification notification = prof->readNotification(send_id);
-            // If it is empty, keep reading messages
+            // If it is empty, keep waiting for new messages
             if(notification.getMessage() == "")
                 continue;
-            // Sends notification from the send to the client
+            // Sends notification read to the client
             std::cout << "thread: " << send_id << " FROM " << notification.getSender() << " TO " << prof->getName() << " MSG: " << notification.getMessage() << std::endl;
             sock.send(Socket::NOTIFICATION + " " + std::to_string(notif_counter) + " "  + notification.getSender() + " " + notification.getTime() + " " + notification.getMessage());
             notif_counter++;
@@ -46,9 +46,9 @@ void SessionManager::send(){
     std::cout << "end thread send: " << send_id << std::endl;
 }
 
-// Listen to notification from a client
+// Listens to client's messages
 void SessionManager::listen(){
-    // Gets a valid ID
+    // Gets the thread ID
     std::stringstream ss;
     ss << std::this_thread::get_id();
     listen_id = ss.str();
@@ -67,7 +67,7 @@ void SessionManager::listen(){
             continue;
         std::string type = spMessage[0];
 
-        // If the type is EXIST, close the client session 
+        // If the type is EXIT, close the client session 
         if (type == Socket::EXIT){
             std::cout<< "thread: " << listen_id  << " EXIT" << std::endl;
             std::string prof = spMessage[1];
@@ -75,7 +75,7 @@ void SessionManager::listen(){
             closeSession();
             getProfile(prof)->decrementSessions();
             break;
-        // If the type is FOLLOW, add the follower profile to the list if the following profile exists
+        // If the type is FOLLOW, adds the profile to the requested profile's followers if it exists. Sends and ACK with feedback from operation's output.
         } else if (type == Socket::FOLLOW){
             std::cout<< "thread: " << listen_id  << " FOLLOW" << std::endl;
             std::string prof = spMessage[1];
@@ -90,14 +90,14 @@ void SessionManager::listen(){
                 if (alreadyFollows) sendAck("FOLLOW 2 " + foll);
                 else sendAck("FOLLOW 1 " + foll);
             }
-        // If the type is SEND, send the message to all the followers clients with open sessions
+        // If the type is SEND, notify all of its followers and sends an ACK with timestamp when message was received and the message received.
         } else if (type == Socket::SEND_NOTIFICATION){
             std::cout<< "thread: " << listen_id  << " SEND_NOTIFICATION" << std::endl;
             std::string prof = spMessage[1];
             std::string msg = spMessage[2];
             sendAck("SEND " + receiveTimeString + " " + msg);
             getProfile(prof)->notifyFollowers(msg, receiveTimeString);
-        // If the type isn't recognize, outputs an error message
+        // If the type isn't recognized, outputs an error message
         } else {
             std::cout<< "thread: " << listen_id << " ERROR " + message << std::endl;
         }
@@ -105,27 +105,27 @@ void SessionManager::listen(){
     std::cout << "end thread listen: " << listen_id << std::endl;
 }
 
-// Checks if a session to closed, uses mutex to avoid wrong data
+// Checks if the session has closed, uses mutex to avoid wrong data
 bool SessionManager::sessionClosed() {
     std::unique_lock<std::mutex> lck(session_mtx);
     bool returnVal = session_closed;
     return returnVal;
 }
 
-// Closes a session, uses mutex to avoid wrong data
+// Closes the session, uses mutex to avoid wrong data
 void SessionManager::closeSession() {
     std::unique_lock<std::mutex> lck(session_mtx);
     session_closed = true;
 }
 
-// Put a message in the ack to send it, uses mutex to avoid miss data
+// Put a message in the ACK buffer to send it, uses mutex to avoid miss data
 void SessionManager::sendAck(std::string msg) {
     std::unique_lock<std::mutex> lck(ack_mtx);
     ack_msgs.push(msg);
     ack_cv.notify_one();
 }
 
-// Checks if there is an message to be send through socket and sends it
+// Checks if there is an ACK message in buffer to be sent and sends it
 // Uses mutex to avoid miss data
 void SessionManager::verifySendAck() {
     std::unique_lock<std::mutex> lck(ack_mtx);
