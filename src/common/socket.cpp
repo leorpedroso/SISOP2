@@ -43,7 +43,7 @@ Socket::Socket(int port, bool reusePort, bool log){
     if (reusePort)
         setReusePort();
 	
-    // In case of error to bind, the connection flag is set to false
+    
 	if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(struct sockaddr)) < 0) 
 		printf("ERROR on binding");
 
@@ -87,7 +87,7 @@ void Socket::send(const std::string &message){
 		printf("ERROR on sendto");
 }
 
-// Sends a message through the bind port if the connection is working
+// Sends a message through the bind port to a given address
 void Socket::send(const std::string &message, struct sockaddr_in addr){
 	int n;
     const char *messageC = message.c_str();
@@ -117,12 +117,12 @@ void Socket::disableLog(){
     log = false;
 }
 
-// Gets the socket authentication address
+// Gets the destination socket address
 struct sockaddr_in Socket::getoth_addr(){
     return oth_addr;
 }
 
-// Sets the authentication address based on the host and the bind port, if it exists
+// Sets the destination address based on the host and the bind port, if it exists
 void Socket::setoth_addr(char *hostname, int port){
     struct hostent *server = gethostbyname(hostname);
     struct sockaddr_in new_addr;
@@ -136,7 +136,7 @@ void Socket::setoth_addr(char *hostname, int port){
     oth_addr = new_addr;
 }
 
-// Sets the authentication address to a new one
+// Sets the destination address to a new one
 void Socket::setoth_addr(struct sockaddr_in new_addr){
     oth_addr = new_addr;
 }
@@ -152,7 +152,7 @@ std::vector<std::string> Socket::splitMessage(const std::string &message){
     return spMessage;
 }
 
-// Splits up a message using the horizontal tab character 
+// Splits up a message up to a certain number of times
 std::vector<std::string> Socket::splitUpToMessage(const std::string &message, int n){
     std::vector<std::string> spMessage;
     std::stringstream stream(message);   

@@ -17,7 +17,7 @@ std::unordered_set<std::string> Profile::getFollowers(){
     return followers;
 };
 
-// Sends the profile notification, uses a mutex to avoid sending corrupted data or sending to wrong subscribers
+// adds the profile notification, uses a mutex to avoid sending corrupted data or sending to wrong subscribers
 void Profile::putNotification(const std::string &message, const std::string &sender, const std::string &time){
     notificationsMutex.lock();
     notifications.push(Notification(message, sender, time));
@@ -39,7 +39,7 @@ Notification Profile::readNotification(const std::string &id){
     sessionsMutex.lock();
     readMapMutex.lock();
 
-    // Insert id to read line
+    // Insert id to read map
     readMap.insert(id);
     if(notificationRef.getRead() == numSessions){
         notifications.pop();
@@ -52,7 +52,7 @@ Notification Profile::readNotification(const std::string &id){
     return notification;
 }
 
-// Check if the id is the next on the line to be read, uses mutex to avoid miss data
+// Check if the id has already read the notification, uses mutex to avoid miss data
 bool Profile::canRead(const std::string &id){
     readMapMutex.lock();
     bool can = (readMap.find(id) == readMap.end());

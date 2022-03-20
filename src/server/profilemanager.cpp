@@ -29,7 +29,7 @@ void printProfiles(){
 }
 
 // Save the current profiles into the profile file
-// Doesn't need to use a mutex for saving
+// Doesn't use a mutex for saving (use safeSaveProfiles if needed)
 void saveProfiles(){
     std::ofstream outputFile(_profileFile, std::ofstream::out | std::ofstream::trunc);
     for(auto any: _profiles) {
@@ -44,6 +44,7 @@ void saveProfiles(){
 
 // Loads all the profiles on the profile file into the server memory
 // Doesn't need to use a mutex for loading
+// because the function will be called only when the program starts before creating new threads
 void loadProfiles(){
     std::ifstream inputFile(_profileFile);
     // If the file isn't open, it can't be read
