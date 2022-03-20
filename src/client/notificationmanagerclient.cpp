@@ -21,7 +21,7 @@ void NotificationManager::listen(){
             spMessage = sock.splitUpToMessage(spMessage[1], 4);
             if(spMessage.size() < 4)
                 continue;
-            std::string notification = "@" + spMessage[1] + " " + spMessage[2] + "\n " + spMessage[3];
+            std::string notification = "@" + spMessage[1] + " " + spMessage[2] + "\n \"" + spMessage[3] + "\"";
             interface.updateNotifications(stoi(spMessage[0]), notification);
 
         // If it is an ack from operations SEND or FOLLOW, check if the message is valid
