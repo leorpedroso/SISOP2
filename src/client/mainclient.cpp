@@ -39,7 +39,7 @@ void *interfaceThread(void *arg){
     pthread_exit(NULL);
 }
 
-// Sends exit message, close socket and kill interface thread
+// Send exit message, close socket and kill interface thread
 void signalHandler(int s){
     sock.send(sock.EXIT + " " + profile + " " + id);
     pthread_cancel(interfaceThread_t);
@@ -48,7 +48,7 @@ void signalHandler(int s){
 
 int main(int argc, char*argv[]) {
 
-    // Receive start client arguments: profile, server adress and connection port
+    // Receive initial client arguments: profile, server address and connection port
     if (argc < 4) {
         std::cerr << " " << argv[0] << " <perfil> <endereço do servidor> <porta>" << std::endl;
         exit(1);
@@ -59,7 +59,7 @@ int main(int argc, char*argv[]) {
     profile = argv[1];
     ClientArgs clientArgs(argv[1], argv[2], std::stoi(argv[3]));
 
-    // Checks if profile name (@) have the correct length
+    // Checks if profile name (@) has the correct length
     if(!(profile.size() >= 4 && profile.size() <= 20)){
         std::cout << "Profile name needs to be between 4 and 20 chars" << std::endl;
         exit(1);
@@ -74,7 +74,7 @@ int main(int argc, char*argv[]) {
     std::string type = sock.getTypeMessage(result);
 
     // In case socket doesn't listen to a connection working, exit with error
-    // If the connection is working, process message of start
+    // If the connection is working, process start message
     if (type == sock.CONNECT_NOT_OK){
         std::cout << "ERROR " << result << std::endl;
         exit(1);
@@ -91,7 +91,7 @@ int main(int argc, char*argv[]) {
         exit(1);
     }
 
-    // Creates client threads of interface and notification
+    // Creates interface and notification client threads
     Interface interface(clientArgs.profile, sock);
     NotificationManager manager(clientArgs.profile, sock, interface);
     pthread_create(&interfaceThread_t, NULL, interfaceThread, &interface);

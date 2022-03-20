@@ -21,10 +21,10 @@ void Interface::run(){
         }
         bool valid = parseString(input, command, arg);
 
-        //If it is a valid user input, treat the command
+        // If it is a valid user input, treat the command
         if (valid){
 
-            // If it is a FOLLOW, check if it has the valid arguments and sends message
+            // If it is a FOLLOW, check if it the argument is not its own profile and executes the follow method (which sends a message to the server to follow the given profile)
             if (command == "FOLLOW") {
                 if (arg != profile){
                     follow(arg);
@@ -36,7 +36,7 @@ void Interface::run(){
             } else if (command == "SEND"){
                 send(arg);
 
-            // Message of error for the user in case of invalid command
+            // Error message to the user in case of invalid command
             } else {
                 std::cout << "Invalid command." << std::endl;    
             }
@@ -46,7 +46,7 @@ void Interface::run(){
     }
 }
 
-// Gets the command and the arguments from spliting the input user string
+// Gets the command and the arguments from splitting the input user string
 bool Interface::parseString(std::string &input, std::string &command, std::string &arg){
     input.erase(input.find_last_not_of(" \t")+1); 
     input.erase(0, input.find_first_not_of(" \t"));
@@ -70,13 +70,13 @@ bool Interface::parseString(std::string &input, std::string &command, std::strin
     return true;
 }
 
-// Sends to the server the FOLLOW command plus the profile of current client and the client name to be followed
+// Sends to the server the FOLLOW command with current client's profile name and the profile name to be followed
 void Interface::follow(const std::string &name) {
     sock.send(sock.FOLLOW + " " + profile + " " + name);
 }
 
-// Sends to the server the NOTIFICATION command plus the profile of the current client and the message
-// It will be resend by the server to all users that follow this profile
+// Sends the NOTIFICATION command to the server with the current client's profile and the message
+// Sends a message to the server in order for it to reach all of its followers
 void Interface::send(const std::string &message) {
     sock.send(sock.SEND_NOTIFICATION + " " + profile + " " + message);
 }

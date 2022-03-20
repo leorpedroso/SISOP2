@@ -11,10 +11,11 @@ void NotificationManager::listen(){
         if (input == "")
             continue;
         std::vector<std::string> spMessage = sock.splitUpToMessage(input, 2);
+        // Ignore messages that don't come with type and message body separated. (probably corrupted messages)
         if(spMessage.size() < 2)
             continue;
 
-        // If is a notification type and a valid message, updates notification with the current message
+        // If it is a notification type and a valid message, updates notification with the current message
         std::string type = spMessage[0];
         if (type == sock.NOTIFICATION){
             spMessage = sock.splitUpToMessage(spMessage[1], 4);
@@ -29,7 +30,7 @@ void NotificationManager::listen(){
             if(spMessage.size() < 3)
                 continue;
             
-            // If it is a SEND, print timestamp and message that the server get from another client
+            // If it is a SEND, print timestamp of arrival and message that the server received from this client
             if (spMessage[0] == "SEND") {
                 std::cout << "Server received message \"";
                 std::cout << spMessage[2] << "\" at " << spMessage[1] << std::endl;
