@@ -15,9 +15,16 @@
 #include "../common/socket.hpp"
 #include "../server/profile.hpp"
 #include "../server/profilemanager.hpp"
+#include "../server/message.hpp"
+#include "../server/server.hpp"
 
 class BackupConnection{
     private:
+
+        int id;
+
+        Server server;
+
         Socket sock; // socket
 
         std::string send_id; // send thread id
@@ -26,15 +33,15 @@ class BackupConnection{
         std::mutex msgs_mtx; // mutex for update_msgs queue
         std::condition_variable msgs_cv; // condition variable that indicates that update_msgs is not empty
 
-        std::queue<std::string> msgs; // queue for update messages
+        std::queue<Message> msgs; // queue for update messages
 
         int notif_counter; // seqn for notifications
 
         // adds ack message to buffer
-        void sendMsg(std::string msg);
+        void sendMsg(Message msg);
 
     public:
-        BackupConnection(int port, struct sockaddr_in addr);
+        BackupConnection(int port, struct sockaddr_in addr, int id, Server server);
         ~BackupConnection();
 
         // send loop

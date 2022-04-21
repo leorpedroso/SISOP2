@@ -4,6 +4,11 @@ const std::string &Server::getName() const{
     return name;
 }
 
-const unsigned int &Server::getID() const{
+const int &Server::getID() const{
     return ID;
 }
+
+const struct sockaddr_in &Server::getAddr() const{
+    return addr;
+}
+

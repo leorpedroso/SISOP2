@@ -33,6 +33,8 @@ class Socket{
         const static std::string SEND_NOTIFICATION; // 5 <profile> <message>
         const static std::string NOTIFICATION; // 6 <seqn> <sender> <time> <message>
         const static std::string ACK; // 7 <ack_type> <args>
+        const static std::string CONNECT_SERVER; // 8
+        const static std::string SERVER_UPDATE; // ?
 
         // max size for a socket message
         const static int MAX_MESSAGE_SIZE;
@@ -62,7 +64,7 @@ class Socket{
         struct sockaddr_in getoth_addr();
         void setoth_addr(char *hostname, int port);
         void setoth_addr(struct sockaddr_in new_addr);
-        std::string Socket::get_addr_string(struct sockaddr_in addr);
+        static std::string get_addr_string(struct sockaddr_in addr);
 
         // split messages 
         static std::vector<std::string> splitMessage(const std::string &message);

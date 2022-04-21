@@ -21,6 +21,8 @@ const std::string Socket::FOLLOW = "4";
 const std::string Socket::SEND_NOTIFICATION = "5";
 const std::string Socket::NOTIFICATION = "6";
 const std::string Socket::ACK = "7";
+const std::string Socket::CONNECT_SERVER = "7";
+const std::string Socket::SERVER_UPDATE = "8";
 const int Socket::MAX_MESSAGE_SIZE = 256;
 
 // Opens socket connection that will be used between server and client
@@ -39,6 +41,14 @@ Socket::Socket(int port, bool reusePort, bool log){
 	    serv_addr.sin_port = 0;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
 	bzero(&(serv_addr.sin_zero), 8);    
+
+    // TIMEOUT
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 100000;
+    if (setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO,&tv,sizeof(tv)) < 0) {
+        perror("Error");
+    }
  
     if (reusePort)
         setReusePort();
@@ -144,7 +154,7 @@ void Socket::setoth_addr(struct sockaddr_in new_addr){
 
 std::string Socket::get_addr_string(struct sockaddr_in addr) {
     char temp[256];
-    getnameinfo(&addr, sizeof addr, temp, 256, 0, 0, 0);
+    getnameinfo((struct sockaddr *) &addr, sizeof addr, temp, 256, 0, 0, 0);
     return std::string(temp);
 }
 

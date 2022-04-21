@@ -3,30 +3,38 @@
 #include "../../include/server/backupconnection.hpp"
 #include<iostream>
 #include<thread>
+#include<mutex>
 
-bool isServerPrimary;
-unsigned int serverID;
-unsigned int IDCounter;
-std::vector<Server> backupServers;
+bool _isServerPrimary;
+int _serverID;
+int _IDCounter;
+std::vector<Server> _backupServers;
+std::mutex _backupServersMutex;
 
 void createServerManager(bool isPrimary){
-    isServerPrimary = isPrimary;
-    if (isPrimary){
-        serverID = 0;
-    } else {
-        serverID = -1;
-    }
+    _isServerPrimary = isPrimary;
+    _serverID = 0;
+}
+
+void setServerIDAndCounter(int val){
+    _serverID = val;
+    _IDCounter = val;
 }
 
 void printServers(){
-    for(Server server: backupServers){
+    for(Server server: _backupServers){
         std::cout << "NAME: " << server.getName() << " ID: " << server.getID() << std::endl;
     }
 }
 
-void addBackupServer(struct sockaddr_in addr, int port){
-    backupServers.push_back(Server(get_addr_string(addr), ++IDCounter));
-    startBackupThreads(server, port);
+void addBackupServer(int port, struct sockaddr_in addr){
+    _backupServersMutex.lock();
+    Server server = Server(addr, ++_IDCounter);
+    _backupServers.push_back(server);
+    int id = _IDCounter;
+    _backupServersMutex.unlock();
+
+    startBackupThreads(addr, port, id, server);
 }
 
 void sendBackupThread(std::shared_ptr<BackupConnection> sess){
@@ -38,8 +46,8 @@ void listenBackupThread(std::shared_ptr<BackupConnection> sess){
     sess->listen();
 }
 
-void startBackupThreads(struct sockaddr_in addr, int port){
-    std::shared_ptr<BackupConnection> sess = std::make_shared<BackupConnection>(port, addr);
+void startBackupThreads(struct sockaddr_in addr, int port, int id, Server server){
+    std::shared_ptr<BackupConnection> sess = std::make_shared<BackupConnection>(port, addr, id, server);
     std::thread listen_thread = std::thread(listenBackupThread, sess);
     listen_thread.detach();
     std::thread send_thread = std::thread(sendBackupThread, sess);

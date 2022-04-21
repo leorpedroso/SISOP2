@@ -4,6 +4,7 @@
 #include "../../include/server/profilemanager.hpp"
 #include "../../include/server/sessionmanager.hpp"
 #include "../../include/server/servermanager.hpp"
+#include "../../include/server/backupthreads.hpp"
 #include "../../include/common/socket.hpp"
 #include <memory>
 #include <chrono>
@@ -32,89 +33,23 @@ void startThreads(int port_sec, struct sockaddr_in addr, Profile *_prof){
     send_thread.detach();
 }
 
-void createServerSendThread(Socket sock, const std::string &nameMain, int port){
-    while(1){
-        // If the session was closed, ends the send
-        if (serverSessionClosed()) break;
-
-        // Checks if there is a notification waiting to be sent to the client
-        Message notification = readMessageFromQueue();
-        if(notification.getMessage() == "")
-            continue;
-        if(notification.getType() == Message::ALIVE){
-            setMainServerAliveSent(true);
-            sock.send(notification.getType());
-        } else {
-            sock.send(notification.getType() + " " + notification.getSender() + " " +notification.getMessage());
-        }
-    }
-    // TODO ELECTION
-}
-
-void AliveThread(){
-    setMainServerAlive(true);
-    while(1){
-        std::this_thread::sleep_for(2000ms);
-        if(getMainServerAlive()){
-            setMainServerAlive(false);
-            setMainServerAliveSent(false);
-            addAlivetoMainServerQueue();
-        } else if(isMainServerAliveSent()){
-            break;
-        }
-    }
-    closeServerSession();
-}
-
-void createServerListenThread(Socket sock, int port){
-    std::thread listen_thread = std::thread(serverListenThread, sock, port);
-    listen_thread.detach();
-}
-
-void serverListenThread(Socket sock, int port){
-    while(1){
-        // listen for valid client messages
-        std::string message = sock.listen();
-        if (message == "")
-            continue;
-        std::vector<std::string> spMessage = sock.splitUpToMessage(message, 2);
-        if(spMessage.size() < 2)
-                continue;
-
-        // Check the type of the message  
-        std::string type = spMessage[0];
-        if(type == Socket::CONNECTSERVER){
-            addBackupServer(sock.getoth_addr, port);
-        } else if(type == Socket::SERVERUPDATE){
-            // TODO
-        } else if(type == Socket::ACKSERVER){
-            // TODO
-        } else {
-            std::cout << "ERROR " << message << std::endl;
-        }
-    }
-}
-
 int main(int argc, char*argv[]) {
-    // Server arguments: connection port to listen for new sessions and port to handle open sessions messages
-    if (argc < 5) {
-        std::cerr << " " << argv[0] << " <porta_primaria> <porta_secundaria> <porta_terciaria> <porta_quaternaria>" << std::endl;
+    // Server arguments: connection port to listen for new sessions and ports to handle open sessions messages
+    if (argc < 4) {
+        std::cerr << " " << argv[0] << " <porta_primaria> <porta_secundaria> <porta_terciaria>" << std::endl;
         exit(1);
     }   
+
     int port_prim = atoi(argv[1]);
     int port_sec = atoi(argv[2]);
     int port_ter = atoi(argv[3]);
-    int port_qua = atoi(argv[4]);
 
-    Socket sockServer(port_ter);
-
-    if (argc > 5){
+    if (argc == 6){
+        int port_main = atoi(argv[5]);
         createServerManager(false);
-        createServerListenThread(sockServer, port_qua);
-        createServerSendThread(sockServer, argv[5], port_ter);
+        createConnectionToMainServer(argv[4], port_ter, port_main);
     } else {
         createServerManager(true);
-        createServerListenThread(sockServer, port_qua);
     }
 
     // Gets users from the save file
@@ -151,6 +86,8 @@ int main(int argc, char*argv[]) {
                 sock.send(sock.CONNECT_NOT_OK + " Profile already has 2 Sessions");
             }
         // If it is not a valid type of message, returns an error
+        } if(type == Socket::CONNECT_SERVER){
+            addBackupServer(port_ter, sock.getoth_addr());
         } else {
             std::cout << "ERROR " << message << std::endl;
         }
