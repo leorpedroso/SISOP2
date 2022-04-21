@@ -142,6 +142,12 @@ void Socket::setoth_addr(struct sockaddr_in new_addr){
     oth_addr = new_addr;
 }
 
+std::string Socket::get_addr_string(struct sockaddr_in addr) {
+    char temp[256];
+    getnameinfo(&addr, sizeof addr, temp, 256, 0, 0, 0);
+    return std::string(temp);
+}
+
 // Splits a message in lines, reading from a stream object
 std::vector<std::string> Socket::splitMessage(const std::string &message){
     std::vector<std::string> spMessage;
