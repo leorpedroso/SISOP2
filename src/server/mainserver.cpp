@@ -86,7 +86,7 @@ int main(int argc, char*argv[]) {
                 sock.send(sock.CONNECT_NOT_OK + " Profile already has 2 Sessions");
             }
         // If it is not a valid type of message, returns an error
-        } if(type == Socket::CONNECT_SERVER){
+        } else if(type == Socket::CONNECT_SERVER){
             addBackupServer(port_ter, sock.getoth_addr());
         } else {
             std::cout << "ERROR " << message << std::endl;

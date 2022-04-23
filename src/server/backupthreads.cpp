@@ -11,10 +11,10 @@ std::mutex _serverSessionMutex;
 std::mutex _mainServerAliveMutex;
 std::mutex _mainServerAliveSentMutex;
 
-std::mutex msgs_mtx; // mutex for update_msgs queue
-std::condition_variable msgs_cv; // condition variable that indicates that update_msgs is not empty
+std::mutex _msgs_mtx; // mutex for update_msgs queue
+std::condition_variable _msgs_cv; // condition variable that indicates that update_msgs is not empty
 
-std::queue<Message> msgs; // queue for update messages
+std::queue<Message> _msgs; // queue for update messages
 
 
 void setMainServerAlive(bool newVal){
@@ -54,7 +54,9 @@ bool getMainServerAliveSent(){
 }
 
 void addAlivetoMainServerQueue(){
-    // TODO ADD MESSAGE TO QUEUE
+    std::unique_lock<std::mutex> lck(_msgs_mtx);
+    _msgs.push(Message(Socket::ALIVE,"Alive"));
+    _msgs_cv.notify_all();
 }
 
 bool serverSessionClosed(){
@@ -70,7 +72,7 @@ bool serverSessionClosed(){
 void closeServerSession(){
     _serverSessionMutex.lock();
 
-    _sessionClosed = false;
+    _sessionClosed = true;
 
     _serverSessionMutex.unlock();
 }
@@ -81,24 +83,28 @@ void createServerSendThread(std::shared_ptr<Socket> sock){
         if (serverSessionClosed()) break;
 
 
-        std::unique_lock<std::mutex> lck(msgs_mtx);
-        if (msgs_cv.wait_for(lck, std::chrono::microseconds(2), []{return !msgs.empty();}) == false)
+        std::unique_lock<std::mutex> lck(_msgs_mtx);
+        if (_msgs_cv.wait_for(lck, std::chrono::microseconds(2), []{return !_msgs.empty();}) == false)
             continue;        
-        Message notification = msgs.front();
-        msgs.pop();
+        Message notification = _msgs.front();
+        _msgs.pop();
         // If it is empty, keep waiting for new messages
         if(notification.getType() == "")
             continue;
-        if(notification.getType() == Socket::ALIVE)
+        if(notification.getType() == Socket::ALIVE){
+            sock->send(Socket::ALIVE + " " + notification.getType() + " " + notification.getArgs());
             setMainServerAliveSent(true);
-        // Sends notification read to the client
-        sock->send(Socket::SERVER_ACK + " " + notification.getType() + " " + notification.getArgs());
+        } else {
+            // Sends notification read to the client
+            sock->send(Socket::SERVER_ACK + " " + notification.getType() + " " + notification.getArgs());
+        }
     }
 }
 
 void AliveThread(){
     setMainServerAlive(true);
     setMainServerAliveSent(false);
+
     while(1){
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
         if(getMainServerAlive()){
@@ -125,6 +131,8 @@ void createServerListenThread(std::shared_ptr<Socket> sock){
 void serverListenThread(std::shared_ptr<Socket> sock){
     while(1){
         // listen for valid client messages
+        if (serverSessionClosed()) break;
+
         std::string message = sock->listen();
         if (message == "")
             continue;
@@ -146,6 +154,8 @@ void serverListenThread(std::shared_ptr<Socket> sock){
                 int port = stoi(spMessage[2]);
 
                 addServer(id, name, port);
+            } else if(type == Socket::ALIVE){
+                setMainServerAlive(true);
             }
 
         } else {
@@ -159,7 +169,7 @@ void createConnectionToMainServer(char *name, int port, int port_main){
     std::shared_ptr<Socket> sock = std::make_shared<Socket> (port);
 
     sock->setoth_addr(name, port_main);
-    sock->send(Socket::CONNECT_SERVER);
+    sock->send(Socket::CONNECT_SERVER + " " + std::to_string(port));
 
     // Listen to server
     std::string result = sock->listen();
@@ -189,6 +199,6 @@ void createConnectionToMainServer(char *name, int port, int port_main){
     createServerListenThread(sock);
     createServerSendThread(sock);
     // TODO ELECTION
-
+    std::cout << "ELEICAO" << std::endl;
     sock->closeSocket();
 }

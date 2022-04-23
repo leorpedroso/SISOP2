@@ -49,8 +49,11 @@ void BackupConnection::listen(){
         if(spMessage.size() < 2)
             continue;
         std::string type = spMessage[0];
-
-       // TODO LISTEN TO THE MESSAGES
+        std::cout << type << std::endl;
+        // TODO LISTEN TO THE MESSAGES
+        if(type == Socket::ALIVE){
+           server->addMsg(Message(Socket::ALIVE, "Alive"));
+        }
     }
     std::cout << "end thread listen backup: " << listen_id << std::endl;
 }

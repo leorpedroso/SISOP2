@@ -55,21 +55,19 @@ void addBackupServer(int port, struct sockaddr_in addr){
     _backupServersMutex.lock();
 
     Server *server = new Server(addr, ++_IDCounter);
-
+    
     std::string name = server->getName();
     int portServer = server->getPort();
     int id = _IDCounter;
 
-     for(Server *otherServer: _backupServers){
-        server->addMsg(Message(Socket::NEW_SERVER, std::to_string(server->getID()) + " " + server->getName() + " " + std::to_string(server->getPort())));
+    for(Server *otherServer: _backupServers){
+        server->addMsg(Message(Socket::NEW_SERVER, std::to_string(otherServer->getID()) + " " + otherServer->getName() + " " + std::to_string(otherServer->getPort())));
+        otherServer->addMsg(Message(Socket::NEW_SERVER, std::to_string(id) + " " + name + " " + std::to_string(portServer)));
     }
-
+    
     _backupServers.push_back(server);
 
     _backupServersMutex.unlock();
-
-    addMessagetoServers(Message(Socket::NEW_SERVER, std::to_string(id) + " " + name + " " + std::to_string(portServer)));
-    
     startBackupThreads(addr, port, id, server);
 }
 
