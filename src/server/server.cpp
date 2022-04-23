@@ -1,18 +1,22 @@
 #include "../../include/server/server.hpp"
 
-const std::string &Server::getName() const{
+const std::string &Server::getName(){
+    std::unique_lock<std::mutex> mlock(name_mtx);
     return name;
 }
 
-const int &Server::getID() const{
+const int &Server::getID(){
+    std::unique_lock<std::mutex> mlock(id_mtx);
     return ID;
 }
 
-const int &Server::getPort() const{
+const int &Server::getPort(){
+    std::unique_lock<std::mutex> mlock(port_mtx);
     return port;
 }
 
-const struct sockaddr_in &Server::getAddr() const{
+const struct sockaddr_in &Server::getAddr(){
+    std::unique_lock<std::mutex> mlock(addr_mtx);
     return addr;
 }
 

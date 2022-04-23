@@ -25,6 +25,7 @@ const std::string Socket::CONNECT_SERVER = "8";
 const std::string Socket::SERVER_UPDATE = "9";
 const std::string Socket::ALIVE = "10";
 const std::string Socket::SERVER_ACK = "11";
+const std::string Socket::NEW_SERVER = "12";
 const int Socket::MAX_MESSAGE_SIZE = 256;
 
 // Opens socket connection that will be used between server and client

@@ -136,7 +136,18 @@ void serverListenThread(std::shared_ptr<Socket> sock){
         // Check the type of the message  
         std::string type = spMessage[0];
         if(type == Socket::SERVER_UPDATE){
-            // TODO SERVER UPDATES
+            spMessage = Socket::splitUpToMessage(spMessage[1], 2);
+            type = spMessage[0];
+
+            if(type == Socket::NEW_SERVER){
+                spMessage = Socket::splitUpToMessage(spMessage[1], 3);
+                int id = stoi(spMessage[0]);
+                std::string name = spMessage[1];
+                int port = stoi(spMessage[2]);
+
+                addServer(id, name, port);
+            }
+
         } else {
             std::cout << "ERROR " << message << std::endl;
         }

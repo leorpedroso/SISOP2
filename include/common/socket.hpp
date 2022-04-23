@@ -37,6 +37,7 @@ class Socket{
         const static std::string SERVER_UPDATE; // 9 ?
         const static std::string ALIVE; // 10 ?
         const static std::string SERVER_ACK; // 11 ?
+        const static std::string NEW_SERVER; // 12 ?
 
         // max size for a socket message
         const static int MAX_MESSAGE_SIZE;

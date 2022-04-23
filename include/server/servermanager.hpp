@@ -13,6 +13,8 @@ void setServerIDAndCounter(int val);
 
 void printServers();
 
+void addServer(int id, const std::string &name, int port);
+
 void addBackupServer(int port, struct sockaddr_in addr);
 
 void sendBackupThread(std::shared_ptr<BackupConnection> sess);
