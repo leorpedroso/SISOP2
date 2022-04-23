@@ -3,19 +3,13 @@
 #include<sstream>
 #include<iostream>
 
-BackupConnection::BackupConnection(int port, struct sockaddr_in addr, int id, Server server): sock(port, true), id(id), server(server) {
+BackupConnection::BackupConnection(int port, struct sockaddr_in addr, int id, Server *server): sock(port, true), id(id), server(server) {
     sock.setoth_addr(addr);
     sock.setConnect();
 }
 
 BackupConnection::~BackupConnection() {
     sock.closeSocket();
-}
-
-void BackupConnection::sendMsg(Message msg) {
-    std::unique_lock<std::mutex> lck(msgs_mtx);
-    msgs.push(msg);
-    msgs_cv.notify_one();
 }
 
 void BackupConnection::send(){
@@ -27,11 +21,7 @@ void BackupConnection::send(){
     sock.send(Socket::CONNECT_OK + " " + std::to_string(id));
 
     while(1){
-        std::unique_lock<std::mutex> lck(msgs_mtx);
-        if (msgs_cv.wait_for(lck, std::chrono::microseconds(2), [this]{return !msgs.empty();}) == false)
-            continue;        
-        Message notification = msgs.front();
-        msgs.pop();
+        Message notification = server->popMsg();
         // If it is empty, keep waiting for new messages
         if(notification.getType() == "")
             continue;

@@ -21,8 +21,10 @@ const std::string Socket::FOLLOW = "4";
 const std::string Socket::SEND_NOTIFICATION = "5";
 const std::string Socket::NOTIFICATION = "6";
 const std::string Socket::ACK = "7";
-const std::string Socket::CONNECT_SERVER = "7";
-const std::string Socket::SERVER_UPDATE = "8";
+const std::string Socket::CONNECT_SERVER = "8";
+const std::string Socket::SERVER_UPDATE = "9";
+const std::string Socket::ALIVE = "10";
+const std::string Socket::SERVER_ACK = "11";
 const int Socket::MAX_MESSAGE_SIZE = 256;
 
 // Opens socket connection that will be used between server and client

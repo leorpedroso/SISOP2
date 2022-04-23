@@ -2,6 +2,7 @@
 
 #include "../common/socket.hpp"
 #include<mutex>
+#include<memory>
 
 void setMainServerAlive(bool newVal);
 
@@ -17,14 +18,14 @@ bool serverSessionClosed();
 
 void closeServerSession();
 
-void createServerSendThread(Socket sock);
+void createServerSendThread(std::shared_ptr<Socket> sock);
 
 void AliveThread();
 
 void createServerAliveThread();
 
-void createServerListenThread(Socket sock);
+void createServerListenThread(std::shared_ptr<Socket> sock);
 
-void serverListenThread(Socket sock);
+void serverListenThread(std::shared_ptr<Socket> sock);
 
 void createConnectionToMainServer(char *name, int port, int port_main);

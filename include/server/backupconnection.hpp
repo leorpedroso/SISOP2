@@ -23,25 +23,17 @@ class BackupConnection{
 
         int id;
 
-        Server server;
+        Server *server;
 
         Socket sock; // socket
 
         std::string send_id; // send thread id
         std::string listen_id; // listen thread id
 
-        std::mutex msgs_mtx; // mutex for update_msgs queue
-        std::condition_variable msgs_cv; // condition variable that indicates that update_msgs is not empty
-
-        std::queue<Message> msgs; // queue for update messages
-
         int notif_counter; // seqn for notifications
 
-        // adds ack message to buffer
-        void sendMsg(Message msg);
-
     public:
-        BackupConnection(int port, struct sockaddr_in addr, int id, Server server);
+        BackupConnection(int port, struct sockaddr_in addr, int id, Server *server);
         ~BackupConnection();
 
         // send loop

@@ -34,7 +34,9 @@ class Socket{
         const static std::string NOTIFICATION; // 6 <seqn> <sender> <time> <message>
         const static std::string ACK; // 7 <ack_type> <args>
         const static std::string CONNECT_SERVER; // 8
-        const static std::string SERVER_UPDATE; // ?
+        const static std::string SERVER_UPDATE; // 9 ?
+        const static std::string ALIVE; // 10 ?
+        const static std::string SERVER_ACK; // 11 ?
 
         // max size for a socket message
         const static int MAX_MESSAGE_SIZE;
