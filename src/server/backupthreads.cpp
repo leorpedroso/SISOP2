@@ -199,6 +199,6 @@ void createConnectionToMainServer(char *name, int port, int port_main){
     createServerListenThread(sock);
     createServerSendThread(sock);
     // TODO ELECTION
-    std::cout << "ELEICAO" << std::endl;
+    
     sock->closeSocket();
 }
