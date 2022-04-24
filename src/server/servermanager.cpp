@@ -41,6 +41,21 @@ void addMessagetoServers(Message msg){
     _backupServersMutex.unlock();
 }
 
+void removeFromBackupServers(int id){
+    _backupServersMutex.lock();
+
+    int pos = -1;
+
+    for(auto i = _backupServers.begin(); i != _backupServers.end(); ++i){
+        if((*i)->getID() == id){
+            _backupServers.erase(i);
+            break;
+        }
+    }
+
+    _backupServersMutex.unlock();
+}
+
 void addServer(int id, const std::string &name, int port){
     _backupServersMutex.lock();
 

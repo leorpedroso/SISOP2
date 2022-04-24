@@ -53,6 +53,7 @@ class Socket{
 
         // listens for messages from socket
         std::string listen();
+        std::string listen(struct sockaddr_in &addr);
 
         // sets connect
         void setConnect();

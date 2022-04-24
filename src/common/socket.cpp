@@ -87,6 +87,24 @@ std::string Socket::listen(){
     return std::string(buf);
 }
 
+std::string Socket::listen(struct sockaddr_in &addr){
+	int n;
+	char buf[MAX_MESSAGE_SIZE];
+
+	if (connected)
+	    n = recvfrom(sockfd, buf, MAX_MESSAGE_SIZE, 0, (struct sockaddr *) NULL, &clilen);
+    else
+        n = recvfrom(sockfd, buf, MAX_MESSAGE_SIZE, 0, (struct sockaddr *) addr, &clilen);
+    // Returns an empty message in case of a receive timeout or fail
+	if (n <= 0) {
+        return "";
+    }
+
+    if(log)
+	    printf("Received a datagram: %s\n", buf);
+    return std::string(buf);
+}
+
 // Sends a message through the bind port without an address defined
 void Socket::send(const std::string &message){
 	int n;

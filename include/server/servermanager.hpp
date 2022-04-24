@@ -22,3 +22,5 @@ void sendBackupThread(std::shared_ptr<BackupConnection> sess);
 void listenBackupThread(std::shared_ptr<BackupConnection> sess);
 
 void startBackupThreads(struct sockaddr_in addr, int port, int id, Server *server);
+
+void removeFromBackupServers(int id);
