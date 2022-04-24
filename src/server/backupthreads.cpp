@@ -1,23 +1,33 @@
 #include "../../include/server/backupthreads.hpp"
 #include "../../include/server/servermanager.hpp"
-#include<iostream>
-
+#include <iostream>
 
 bool _isMainServerAlive;
 bool _isMainServerAliveSent;
 bool _sessionClosed;
+bool _isCoordinator;
 
 std::mutex _serverSessionMutex;
 std::mutex _mainServerAliveMutex;
 std::mutex _mainServerAliveSentMutex;
+std::mutex _isCoordinatorMutex;
 
-std::mutex _msgs_mtx; // mutex for update_msgs queue
+std::mutex _msgs_mtx;             // mutex for update_msgs queue
 std::condition_variable _msgs_cv; // condition variable that indicates that update_msgs is not empty
 
 std::queue<Message> _msgs; // queue for update messages
 
+void setCoordinator(bool newVal) {
+    std::unique_lock<std::mutex> mlock(_isCoordinatorMutex);
+    _isCoordinator = newVal;
+}
 
-void setMainServerAlive(bool newVal){
+bool isCoordinator() {
+    std::unique_lock<std::mutex> mlock(_isCoordinatorMutex);
+    return _isCoordinator;
+}
+
+void setMainServerAlive(bool newVal) {
     _mainServerAliveMutex.lock();
 
     _isMainServerAlive = newVal;
@@ -25,7 +35,7 @@ void setMainServerAlive(bool newVal){
     _mainServerAliveMutex.unlock();
 }
 
-void setMainServerAliveSent(bool newVal){
+void setMainServerAliveSent(bool newVal) {
     _mainServerAliveSentMutex.lock();
 
     _isMainServerAliveSent = newVal;
@@ -33,7 +43,7 @@ void setMainServerAliveSent(bool newVal){
     _mainServerAliveSentMutex.unlock();
 }
 
-bool getMainServerAlive(){
+bool getMainServerAlive() {
     _mainServerAliveMutex.lock();
 
     bool temp = _isMainServerAlive;
@@ -43,23 +53,23 @@ bool getMainServerAlive(){
     return temp;
 }
 
-bool getMainServerAliveSent(){
+bool getMainServerAliveSent() {
     _mainServerAliveSentMutex.lock();
 
-     bool temp = _isMainServerAliveSent;
+    bool temp = _isMainServerAliveSent;
 
     _mainServerAliveSentMutex.unlock();
 
     return temp;
 }
 
-void addAlivetoMainServerQueue(){
+void addAlivetoMainServerQueue() {
     std::unique_lock<std::mutex> lck(_msgs_mtx);
-    _msgs.push(Message(Socket::ALIVE,"Alive"));
+    _msgs.push(Message(Socket::ALIVE, "Alive"));
     _msgs_cv.notify_all();
 }
 
-bool serverSessionClosed(){
+bool serverSessionClosed() {
     _serverSessionMutex.lock();
 
     bool temp = _sessionClosed;
@@ -69,7 +79,7 @@ bool serverSessionClosed(){
     return temp;
 }
 
-void closeServerSession(){
+void closeServerSession() {
     _serverSessionMutex.lock();
 
     _sessionClosed = true;
@@ -77,21 +87,21 @@ void closeServerSession(){
     _serverSessionMutex.unlock();
 }
 
-void createServerSendThread(std::shared_ptr<Socket> sock){
-    while(1){
+void createServerSendThread(std::shared_ptr<Socket> sock) {
+    while (1) {
         // If the session was closed, ends the send
-        if (serverSessionClosed()) break;
-
+        if (serverSessionClosed())
+            break;
 
         std::unique_lock<std::mutex> lck(_msgs_mtx);
-        if (_msgs_cv.wait_for(lck, std::chrono::microseconds(2), []{return !_msgs.empty();}) == false)
-            continue;        
+        if (_msgs_cv.wait_for(lck, std::chrono::microseconds(2), [] { return !_msgs.empty(); }) == false)
+            continue;
         Message notification = _msgs.front();
         _msgs.pop();
         // If it is empty, keep waiting for new messages
-        if(notification.getType() == "")
+        if (notification.getType() == "")
             continue;
-        if(notification.getType() == Socket::ALIVE){
+        if (notification.getType() == Socket::ALIVE) {
             sock->send(Socket::ALIVE + " " + notification.getType() + " " + notification.getArgs());
             setMainServerAliveSent(true);
         } else {
@@ -101,72 +111,88 @@ void createServerSendThread(std::shared_ptr<Socket> sock){
     }
 }
 
-void AliveThread(){
+void AliveThread() {
     setMainServerAlive(true);
     setMainServerAliveSent(false);
 
-    while(1){
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-        if(getMainServerAlive()){
+    while (1) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+        if (getMainServerAlive()) {
             setMainServerAlive(false);
             setMainServerAliveSent(false);
             addAlivetoMainServerQueue();
-        } else if(getMainServerAliveSent()){
+        } else if (getMainServerAliveSent()) {
             break;
         }
     }
     closeServerSession();
 }
 
-void createServerAliveThread(){
+void createServerAliveThread() {
     std::thread alive_thread = std::thread(AliveThread);
     alive_thread.detach();
 }
 
-void createServerListenThread(std::shared_ptr<Socket> sock){
+void createServerListenThread(std::shared_ptr<Socket> sock) {
     std::thread listen_thread = std::thread(serverListenThread, sock);
     listen_thread.detach();
 }
 
-void serverListenThread(std::shared_ptr<Socket> sock){
-    while(1){
+void serverListenThread(std::shared_ptr<Socket> sock) {
+    while (1) {
         // listen for valid client messages
-        if (serverSessionClosed()) break;
+        // if (serverSessionClosed()) {
+        //     std::cout << "listen closed." << std::endl;
+        //     break;
+        // }
 
         std::string message = sock->listen();
         if (message == "")
             continue;
 
         std::vector<std::string> spMessage = sock->splitUpToMessage(message, 2);
-        if(spMessage.size() < 2)
+        if (spMessage.size() < 2)
             continue;
 
-        // Check the type of the message  
+        // Check the type of the message
         std::string type = spMessage[0];
-        if(type == Socket::SERVER_UPDATE){
+        if (type == Socket::SERVER_UPDATE) {
             spMessage = Socket::splitUpToMessage(spMessage[1], 2);
             type = spMessage[0];
 
-            if(type == Socket::NEW_SERVER){
+            if (type == Socket::NEW_SERVER) {
                 spMessage = Socket::splitUpToMessage(spMessage[1], 3);
                 int id = stoi(spMessage[0]);
                 std::string name = spMessage[1];
                 int port = stoi(spMessage[2]);
 
                 addServer(id, name, port);
-            } else if(type == Socket::ALIVE){
+            } else if (type == Socket::ALIVE) {
                 setMainServerAlive(true);
             }
 
+        } else if (type == Socket::ELECTION_START) {
+            for (Server *server : getBackupServers()) {
+                if (server->getID() == stoi(spMessage[1])) {
+                    sock->setoth_addr((char *)server->getName().c_str(), server->getPort());
+                    sock->send(Socket::ELECTION_ANSWER + " ");
+                }
+            }
+            closeServerSession();
+        } else if (type == Socket::ELECTION_ANSWER) {
+            setCoordinator(false);
+        } else if (type == Socket::ELECTION_COORDINATOR) {
+            setCoordinator(false);
+            removeFromBackupServers(stoi(spMessage[1]));
         } else {
             std::cout << "ERROR " << message << std::endl;
         }
     }
 }
 
-void createConnectionToMainServer(char *name, int port, int port_main){
+void createConnectionToMainServer(char *name, int port, int port_main) {
     // Sends message to server requesting login
-    std::shared_ptr<Socket> sock = std::make_shared<Socket> (port);
+    std::shared_ptr<Socket> sock = std::make_shared<Socket>(port);
 
     sock->setoth_addr(name, port_main);
     sock->send(Socket::CONNECT_SERVER + " " + std::to_string(port));
@@ -177,12 +203,12 @@ void createConnectionToMainServer(char *name, int port, int port_main){
 
     // In case socket doesn't listen to a connection working, exit with error
     // If the connection is working, process start message
-    if (type == Socket::CONNECT_NOT_OK){
-        std::cout << "ERROR " << result << std::endl;
+    if (type == Socket::CONNECT_NOT_OK) {
+        std::cerr << "ERROR " << result << std::endl;
         exit(1);
-    } else if(type == Socket::CONNECT_OK){
+    } else if (type == Socket::CONNECT_OK) {
         std::vector<std::string> spMessage = sock->splitUpToMessage(result, 2);
-        if(spMessage.size() < 2){
+        if (spMessage.size() < 2) {
             std::cout << "ERROR " << result << std::endl;
             exit(1);
         }
@@ -195,10 +221,35 @@ void createConnectionToMainServer(char *name, int port, int port_main){
         exit(1);
     }
 
-    createServerAliveThread();
     createServerListenThread(sock);
+
+    // while (1) {
+    createServerAliveThread();
     createServerSendThread(sock);
-    // TODO ELECTION
-    
+    startElection(sock);
+    // TODO: setar o coordinator como server primary
+    // }
+
     sock->closeSocket();
+}
+
+void startElection(std::shared_ptr<Socket> sock) {
+    for (Server *server : getBackupServers()) {
+        if (server->getID() > getServerID()) {
+            sock->setoth_addr((char *)server->getName().c_str(), server->getPort());
+            sock->send(Socket::ELECTION_START + " " + std::to_string(getServerID()));
+        }
+    }
+
+    setCoordinator(true);
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    if (isCoordinator()) {
+        std::cout << "Elected new coordinator. Sending message to other backups." << std::endl;
+        for (Server *server : getBackupServers()) {
+            sock->setoth_addr((char *)server->getName().c_str(), server->getPort());
+            sock->send(Socket::ELECTION_COORDINATOR + " " + std::to_string(getServerID()));
+        }
+    }
+
+    // TODO: resolver problema de receber um answer depois de um coordinator
 }

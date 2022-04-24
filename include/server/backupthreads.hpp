@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../common/socket.hpp"
-#include<mutex>
-#include<memory>
+#include <mutex>
+#include <memory>
 
 void setMainServerAlive(bool newVal);
 
@@ -29,3 +29,5 @@ void createServerListenThread(std::shared_ptr<Socket> sock);
 void serverListenThread(std::shared_ptr<Socket> sock);
 
 void createConnectionToMainServer(char *name, int port, int port_main);
+
+void startElection(std::shared_ptr<Socket> sock);
