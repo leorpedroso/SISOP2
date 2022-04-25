@@ -59,7 +59,7 @@ Socket::Socket(int port, bool reusePort, bool log) {
         setReusePort();
 
     if (bind(sockfd, (struct sockaddr *)&serv_addr, sizeof(struct sockaddr)) < 0)
-        printf("ERROR on binding");
+        printf("ERROR on binding %d", port);
 
     connected = false;
 }
@@ -67,6 +67,14 @@ Socket::Socket(int port, bool reusePort, bool log) {
 // Close connection through socket
 void Socket::closeSocket() {
     close(sockfd);
+}
+
+std::string Socket::getTime(){
+    auto receiveTime = std::chrono::system_clock::now();
+    std::time_t rec_time = std::chrono::system_clock::to_time_t(receiveTime);
+    std::stringstream bufferTime;
+    bufferTime << std::put_time(std::localtime(&rec_time), "%d/%b/%Y-%H:%M:%S");
+    return bufferTime.str();
 }
 
 // Listens to message being received through the bind port if the connection is working
@@ -84,25 +92,7 @@ std::string Socket::listen() {
     }
 
     if (log)
-        printf("Received a datagram: %s\n", buf);
-    return std::string(buf);
-}
-
-std::string Socket::listen(struct sockaddr_in &addr) {
-    int n;
-    char buf[MAX_MESSAGE_SIZE];
-
-    if (connected)
-        n = recvfrom(sockfd, buf, MAX_MESSAGE_SIZE, 0, (struct sockaddr *)NULL, &clilen);
-    else
-        n = recvfrom(sockfd, buf, MAX_MESSAGE_SIZE, 0, (struct sockaddr *)&addr, &clilen);
-    // Returns an empty message in case of a receive timeout or fail
-    if (n <= 0) {
-        return "";
-    }
-
-    if (log)
-        printf("Received a datagram: %s\n", buf);
+        printf("Received a datagram (at %s): %s\n", (char*)getTime().c_str(), buf);
     return std::string(buf);
 }
 
@@ -117,6 +107,8 @@ void Socket::send(const std::string &message) {
     // Returns an error if the send fails
     if (n < 0)
         printf("ERROR on sendto");
+    else if (log)
+        printf("Sent a datagram (at %s): %s\n", (char*)getTime().c_str(), messageC);
 }
 
 // Sends a message through the bind port to a given address
@@ -127,6 +119,8 @@ void Socket::send(const std::string &message, struct sockaddr_in addr) {
     // Returns an error if send fails
     if (n < 0)
         printf("ERROR on sendto");
+    else if (log)
+        printf("Sent a datagram (at %s): %s\n", (char*)getTime().c_str(), messageC);
 }
 
 // Connect to the socket if the connection is working properly
@@ -167,6 +161,21 @@ void Socket::setoth_addr(char *hostname, int port) {
     new_addr.sin_addr = *((struct in_addr *)server->h_addr);
     bzero(&(new_addr.sin_zero), 8);
     oth_addr = new_addr;
+}
+
+
+struct sockaddr_in Socket::create_addr(char *hostname, int port) {
+    struct hostent *server = gethostbyname(hostname);
+    struct sockaddr_in new_addr;
+    if (server == NULL) {
+        fprintf(stderr, "ERROR, no such host\n");
+        exit(1);
+    }
+    new_addr.sin_family = AF_INET;
+    new_addr.sin_port = htons(port);
+    new_addr.sin_addr = *((struct in_addr *)server->h_addr);
+    bzero(&(new_addr.sin_zero), 8);
+    return new_addr;
 }
 
 // Sets the destination address to a new one

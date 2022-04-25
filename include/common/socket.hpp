@@ -10,6 +10,9 @@
 #include <netdb.h>
 #include <stdio.h>
 #include <vector>
+#include <chrono>
+#include <iomanip>
+#include <ctime>
 
 class Socket {
   private:
@@ -57,7 +60,6 @@ class Socket {
 
     // listens for messages from socket
     std::string listen();
-    std::string listen(struct sockaddr_in &addr);
 
     // sets connect
     void setConnect();
@@ -68,8 +70,11 @@ class Socket {
     // disables logging
     void disableLog();
 
+    static std::string getTime();
+
     // getter and setters for the communicating address and port
     struct sockaddr_in getoth_addr();
+    static struct sockaddr_in create_addr(char *hostname, int port);
     void setoth_addr(char *hostname, int port);
     void setoth_addr(struct sockaddr_in new_addr);
     static std::string get_addr_string(struct sockaddr_in addr);

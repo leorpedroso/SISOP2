@@ -1,21 +1,56 @@
 #include "../../include/server/backupthreads.hpp"
 #include "../../include/server/servermanager.hpp"
 #include <iostream>
+#include<sstream>
 
 bool _isMainServerAlive;
 bool _isMainServerAliveSent;
 bool _sessionClosed;
 bool _isCoordinator;
+bool _isElectionOver;
+struct sockaddr_in _MainServer;
 
 std::mutex _serverSessionMutex;
 std::mutex _mainServerAliveMutex;
 std::mutex _mainServerAliveSentMutex;
 std::mutex _isCoordinatorMutex;
+std::mutex _isElectionOverMutex;
+std::mutex _MainServerMutex;
 
 std::mutex _msgs_mtx;             // mutex for update_msgs queue
 std::condition_variable _msgs_cv; // condition variable that indicates that update_msgs is not empty
 
 std::queue<Message> _msgs; // queue for update messages
+
+struct sockaddr_in getMainServer(){
+    std::unique_lock<std::mutex> mlock(_MainServerMutex);
+
+    return _MainServer;
+}
+
+void setMainServer(struct sockaddr_in newServer){
+    std::unique_lock<std::mutex> mlock(_MainServerMutex);
+
+    _MainServer = newServer;
+}
+
+void setMainServer(struct sockaddr_in newServer, int newPort){
+    std::unique_lock<std::mutex> mlock(_MainServerMutex);
+
+    _MainServer = newServer;
+    _MainServer.sin_port = htons(newPort);
+}
+
+
+void setElectionOver(bool newVal) {
+    std::unique_lock<std::mutex> mlock(_isElectionOverMutex);
+    _isElectionOver = newVal;
+}
+
+bool isElectionOver() {
+    std::unique_lock<std::mutex> mlock(_isElectionOverMutex);
+    return _isElectionOver;
+}
 
 void setCoordinator(bool newVal) {
     std::unique_lock<std::mutex> mlock(_isCoordinatorMutex);
@@ -87,7 +122,20 @@ void closeServerSession() {
     _serverSessionMutex.unlock();
 }
 
+void openServerSession() {
+    _serverSessionMutex.lock();
+
+    _sessionClosed = false;
+
+    _serverSessionMutex.unlock();
+}
+
 void createServerSendThread(std::shared_ptr<Socket> sock) {
+    std::stringstream ss;
+    ss << std::this_thread::get_id();
+    std::string send_id = ss.str();
+    std::cout << "start thread send main: " << send_id << std::endl;
+
     while (1) {
         // If the session was closed, ends the send
         if (serverSessionClosed())
@@ -102,18 +150,25 @@ void createServerSendThread(std::shared_ptr<Socket> sock) {
         if (notification.getType() == "")
             continue;
         if (notification.getType() == Socket::ALIVE) {
-            sock->send(Socket::ALIVE + " " + notification.getType() + " " + notification.getArgs());
+            sock->send(Socket::ALIVE + " " + notification.getType() + " " + notification.getArgs(), getMainServer());
             setMainServerAliveSent(true);
         } else {
             // Sends notification read to the client
-            sock->send(Socket::SERVER_ACK + " " + notification.getType() + " " + notification.getArgs());
+            sock->send(Socket::SERVER_ACK + " " + notification.getType() + " " + notification.getArgs(), getMainServer());
         }
     }
+    std::cout << "end thread send main: " << send_id << std::endl;
 }
 
 void AliveThread() {
+    std::stringstream ss;
+    ss << std::this_thread::get_id();
+    std::string alive_id = ss.str();
+    std::cout << "start thread alive main: " << alive_id << std::endl;
+
     setMainServerAlive(true);
     setMainServerAliveSent(false);
+
 
     while (1) {
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
@@ -126,6 +181,8 @@ void AliveThread() {
         }
     }
     closeServerSession();
+
+    std::cout << "end thread alive main: " << alive_id << std::endl;
 }
 
 void createServerAliveThread() {
@@ -139,12 +196,19 @@ void createServerListenThread(std::shared_ptr<Socket> sock) {
 }
 
 void serverListenThread(std::shared_ptr<Socket> sock) {
+    std::stringstream ss;
+    ss << std::this_thread::get_id();
+    std::string listen_id = ss.str();
+    std::cout << "start thread listen main: " << listen_id << std::endl;
+
     while (1) {
         // listen for valid client messages
         // if (serverSessionClosed()) {
         //     std::cout << "listen closed." << std::endl;
         //     break;
         // }
+        if(isCoordinator() && isElectionOver())
+            break;
 
         std::string message = sock->listen();
         if (message == "")
@@ -172,27 +236,41 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
             }
 
         } else if (type == Socket::ELECTION_START) {
+
+            // PROBLEMA ???
             for (Server *server : getBackupServers()) {
                 if (server->getID() == stoi(spMessage[1])) {
-                    sock->setoth_addr((char *)server->getName().c_str(), server->getPort());
-                    sock->send(Socket::ELECTION_ANSWER + " ");
+                    sock->send(Socket::ELECTION_ANSWER + " ", 
+                        Socket::create_addr((char *)server->getName().c_str(), server->getPort()));
                 }
             }
             closeServerSession();
         } else if (type == Socket::ELECTION_ANSWER) {
             setCoordinator(false);
         } else if (type == Socket::ELECTION_COORDINATOR) {
+            spMessage = Socket::splitUpToMessage(spMessage[1], 2);
+            int coordId = stoi(spMessage[0]);
+            int coordPort = stoi(spMessage[1]);
+
             setCoordinator(false);
-            removeFromBackupServers(stoi(spMessage[1]));
+            setMainServer(sock->getoth_addr(), coordPort);
+            removeFromBackupServers(coordId);
+        } else if (type == Socket::CONNECT_OK){
+            //setMainServer(sock->getoth_addr());
         } else {
             std::cout << "ERROR " << message << std::endl;
         }
     }
+
+    std::cout << "end thread listen main: " << listen_id << std::endl;
 }
 
 void createConnectionToMainServer(char *name, int port, int port_main) {
     // Sends message to server requesting login
-    std::shared_ptr<Socket> sock = std::make_shared<Socket>(port);
+    std::shared_ptr<Socket> sock = std::make_shared<Socket>(port, true);
+
+    setCoordinator(false);
+    setElectionOver(true);
 
     sock->setoth_addr(name, port_main);
     sock->send(Socket::CONNECT_SERVER + " " + std::to_string(port));
@@ -221,35 +299,49 @@ void createConnectionToMainServer(char *name, int port, int port_main) {
         exit(1);
     }
 
+    setMainServer(sock->getoth_addr());
+
     createServerListenThread(sock);
 
-    // while (1) {
-    createServerAliveThread();
-    createServerSendThread(sock);
-    startElection(sock);
-    // TODO: setar o coordinator como server primary
-    // }
+    while (1) {
+        openServerSession();
 
-    sock->closeSocket();
-}
+        createServerAliveThread();
+        createServerSendThread(sock);
 
-void startElection(std::shared_ptr<Socket> sock) {
-    for (Server *server : getBackupServers()) {
-        if (server->getID() > getServerID()) {
-            sock->setoth_addr((char *)server->getName().c_str(), server->getPort());
-            sock->send(Socket::ELECTION_START + " " + std::to_string(getServerID()));
+        startElection(sock);
+
+        if(isCoordinator()) {
+            break;
         }
     }
 
+    //sock->closeSocket();
+
+    startServerFromBackup(getTercPort());
+}
+
+void startElection(std::shared_ptr<Socket> sock) {
+    setElectionOver(false);
     setCoordinator(true);
+
+    std::cout << "Election started." << std::endl;
+
+    for (Server *server : getBackupServers()) {
+        if (server->getID() > getServerID()) {
+            sock->send(Socket::ELECTION_START + " " + std::to_string(getServerID()), 
+                Socket::create_addr((char *)server->getName().c_str(), server->getPort()));
+        }
+    }
+
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     if (isCoordinator()) {
         std::cout << "Elected new coordinator. Sending message to other backups." << std::endl;
         for (Server *server : getBackupServers()) {
-            sock->setoth_addr((char *)server->getName().c_str(), server->getPort());
-            sock->send(Socket::ELECTION_COORDINATOR + " " + std::to_string(getServerID()));
+            sock->send(Socket::ELECTION_COORDINATOR + " " + std::to_string(getServerID()) + " " + std::to_string(getTercPort()),
+                Socket::create_addr((char *)server->getName().c_str(), server->getPort()));
         }
     }
 
-    // TODO: resolver problema de receber um answer depois de um coordinator
+    setElectionOver(true);
 }

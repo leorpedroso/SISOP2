@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
         std::cerr << "If primary server:" << std::endl;
         std::cerr << " " << argv[0] << " <porta_primaria> <porta_secundaria> <porta_terciaria>" << std::endl;
         std::cerr << "If backup server:" << std::endl;
-        std::cerr << " " << argv[0] << " <porta_primaria> <porta_secundaria> <porta_terciaria> <primary_name> <port_main>" << std::endl;
+        std::cerr << " " << argv[0] << " <porta_primaria> <porta_secundaria> <porta_terciaria> <porta_quaternaria> <primary_name> <port_main>" << std::endl;
         exit(1);
     }
 
@@ -47,12 +47,21 @@ int main(int argc, char *argv[]) {
     int port_sec = atoi(argv[2]);
     int port_ter = atoi(argv[3]);
 
-    if (argc == 6) {
-        int port_main = atoi(argv[5]);
+    setTercPort(port_ter);
+
+    if (argc == 7) {
+        int port_main = atoi(argv[6]);
+        int port_quart = atoi(argv[4]);
         createServerManager(false);
-        createConnectionToMainServer(argv[4], port_ter, port_main);
-    } else {
+        createConnectionToMainServer(argv[5], port_quart, port_main);
+    } else if(argc == 4){
         createServerManager(true);
+    } else {
+        std::cerr << "If primary server:" << std::endl;
+        std::cerr << " " << argv[0] << " <porta_primaria> <porta_secundaria> <porta_terciaria>" << std::endl;
+        std::cerr << "If backup server:" << std::endl;
+        std::cerr << " " << argv[0] << " <porta_primaria> <porta_secundaria> <porta_terciaria> <porta_quaternaria> <primary_name> <port_main>" << std::endl;
+        exit(1);
     }
 
     // Gets users from the save file
@@ -92,7 +101,7 @@ int main(int argc, char *argv[]) {
         } else if (type == Socket::CONNECT_SERVER) {
             addBackupServer(port_ter, sock.getoth_addr());
         } else {
-            std::cout << "ERROR " << message << std::endl;
+            std::cout << "ERROR MAIN THREAD" << message << std::endl;
         }
     }
 }

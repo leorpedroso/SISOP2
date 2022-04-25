@@ -6,6 +6,11 @@
 #include "server.hpp"
 #include "backupconnection.hpp"
 
+
+void setTercPort(int port);
+
+int getTercPort();
+
 void createServerManager(bool isPrimary);
 
 void setServerIDAndCounter(int val);
@@ -17,6 +22,8 @@ void printServers();
 void addServer(int id, const std::string &name, int port);
 
 void addBackupServer(int port, struct sockaddr_in addr);
+
+void startServerFromBackup(int port);
 
 std::vector<Server *> getBackupServers();
 

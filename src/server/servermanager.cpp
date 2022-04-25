@@ -8,6 +8,7 @@
 bool _isServerPrimary;
 int _serverID;
 int _IDCounter;
+int _tercPort;
 std::vector<Server *> _backupServers;
 std::mutex _backupServersMutex;
 std::mutex _serverIDMutex;
@@ -15,6 +16,14 @@ std::mutex _serverIDMutex;
 void createServerManager(bool isPrimary) {
     _isServerPrimary = isPrimary;
     _serverID = 0;
+}
+
+void setTercPort(int port){
+    _tercPort = port;
+}
+
+int getTercPort(){
+    return _tercPort;
 }
 
 void setServerIDAndCounter(int val) {
@@ -96,6 +105,17 @@ void addBackupServer(int port, struct sockaddr_in addr) {
 
     _backupServersMutex.unlock();
     startBackupThreads(addr, port, id, server);
+}
+
+void startServerFromBackup(int port) {
+    _backupServersMutex.lock();
+
+    
+    for(Server *server: _backupServers){
+        startBackupThreads(Socket::create_addr((char *)server->getName().c_str(), server->getPort()), port, server->getID(), server);    
+    }
+
+    _backupServersMutex.unlock();
 }
 
 void sendBackupThread(std::shared_ptr<BackupConnection> sess) {
