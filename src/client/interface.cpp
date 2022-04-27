@@ -6,6 +6,11 @@
 #include <signal.h>
 #include <utility>
 
+std::mutex notif_counter_mutex;
+
+void setAddr(struct sockaddr_in newAddr);
+struct sockaddr_in getAddr();
+
 // Runs interface of client to treat input and output messages
 void Interface::run(){
     std::string input;
@@ -72,27 +77,43 @@ bool Interface::parseString(std::string &input, std::string &command, std::strin
 
 // Sends to the server the FOLLOW command with current client's profile name and the profile name to be followed
 void Interface::follow(const std::string &name) {
-    sock.send(sock.FOLLOW + " " + profile + " " + name);
+    sock.send(sock.FOLLOW + " " + profile + " " + name, getAddr());
 }
 
 // Sends the NOTIFICATION command to the server with the current client's profile and the message
 // Sends a message to the server in order for it to reach all of its followers
 void Interface::send(const std::string &message) {
-    sock.send(sock.SEND_NOTIFICATION + " " + profile + " " + message);
+    sock.send(sock.SEND_NOTIFICATION + " " + profile + " " + message, getAddr());
 }
 
 // Output for the user all its received notifications
 void Interface::updateNotifications(int given_counter, const std::string &notification){
-    if (notif_counter == given_counter) {
-        notif_buffer.insert(std::make_pair(notif_counter, notification));
-        std::unordered_map<int, std::string>::const_iterator next_notif = notif_buffer.find(notif_counter);        
+    int notif_counter_local = getNotifCounter();
+    if (notif_counter_local == given_counter) {
+        notif_buffer.insert(std::make_pair(notif_counter_local, notification));
+        std::unordered_map<int, std::string>::const_iterator next_notif = notif_buffer.find(notif_counter_local);        
         while (next_notif != notif_buffer.end()) {
             std::cout << next_notif->second << std::endl;
-            notif_buffer.erase(notif_counter);
-            notif_counter++;
-            next_notif = notif_buffer.find(notif_counter);
+            notif_buffer.erase(notif_counter_local);
+            incrementNotifCounter();
+            ++notif_counter_local;
+            next_notif = notif_buffer.find(notif_counter_local);
         }
     } else {
         notif_buffer.insert(std::make_pair(given_counter, notification));
     }
+}
+
+
+void Interface::setNotifCounter(int val){
+    std::unique_lock<std::mutex> mlock(notif_counter_mutex);
+    notif_counter = val;
+}
+void Interface::incrementNotifCounter(){
+    std::unique_lock<std::mutex> mlock(notif_counter_mutex);
+    ++notif_counter;
+}
+int Interface::getNotifCounter(){
+    std::unique_lock<std::mutex> mlock(notif_counter_mutex);
+    return notif_counter; 
 }

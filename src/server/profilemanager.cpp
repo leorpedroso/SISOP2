@@ -79,14 +79,15 @@ Profile *getProfile(const std::string &name){
 }
 
 // Creates a new profile based on the name of the client, uses a mutex to avoid wrong data
-void createProfile(const std::string &name){
+void createProfile(const std::string &name, bool save){
     std::unique_lock<std::mutex> mlock(_profileMapMutex);
     auto pos = _profiles.find(name);
     if(pos != _profiles.end()){
         return;
     } else {
         _profiles.insert({name, new Profile(name)});
-        saveProfiles();
+        if (save)
+            saveProfiles();
     }
 }
 

@@ -2,6 +2,7 @@
 #include "../../include/server/servermanager.hpp"
 #include <iostream>
 #include<sstream>
+#include<cstring>
 
 bool _isMainServerAlive;
 bool _isMainServerAliveSent;
@@ -17,10 +18,15 @@ std::mutex _isCoordinatorMutex;
 std::mutex _isElectionOverMutex;
 std::mutex _MainServerMutex;
 
+std::unordered_set<std::string> _backupClientSessions;
+std::mutex _backupClientSessionsMutex;
+
 std::mutex _msgs_mtx;             // mutex for update_msgs queue
 std::condition_variable _msgs_cv; // condition variable that indicates that update_msgs is not empty
 
 std::queue<Message> _msgs; // queue for update messages
+
+void startThreads(int port_sec, struct sockaddr_in addr, Profile *_prof);
 
 struct sockaddr_in getMainServer(){
     std::unique_lock<std::mutex> mlock(_MainServerMutex);
@@ -39,6 +45,24 @@ void setMainServer(struct sockaddr_in newServer, int newPort){
 
     _MainServer = newServer;
     _MainServer.sin_port = htons(newPort);
+}
+
+void addBackupClientSession(const std::string &prof, const std::string &addr, const std::string &port){
+    std::unique_lock<std::mutex> mlock(_backupClientSessionsMutex);
+
+    _backupClientSessions.insert(prof + " " + addr + " " + port);
+}
+
+void removeBackupClientSession(const std::string &prof, const std::string &addr, const std::string &port){
+    std::unique_lock<std::mutex> mlock(_backupClientSessionsMutex);
+
+    _backupClientSessions.erase(prof + " " + addr + " " + port);
+}
+
+std::unordered_set<std::string> getBackupClientSessions(){
+    std::unique_lock<std::mutex> mlock(_backupClientSessionsMutex);
+
+    return _backupClientSessions;
 }
 
 
@@ -239,14 +263,68 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
                 addServer(id, name, port);
             } else if (type == Socket::ALIVE) {
                 setMainServerAlive(true);
-            } else {
-                // TEST
-                spMessage = Socket::splitUpToMessage(spMessage[1], 2);
+            } else if (type == Socket::ACK){
+                // id prof msg
+                spMessage = Socket::splitUpToMessage(spMessage[1], 3);
+                std::string id = spMessage[0];
+                std::string prof = spMessage[1];
+                std::string message = spMessage[2];
+                setGlobalMessageCount(stoi(id));
+
+                // message -> textType data0 data1
+                // data0(FOLLOW) -> 0 | 1 | 2
+                // data1(FOLLOW) -> follower
+                // data0(SEND) -> time
+                // data1(SEND) -> string
+                spMessage = Socket::splitUpToMessage(spMessage[2], 3);
+
+                if(spMessage[0] == "FOLLOW"){
+                    // 0 and 2 mean that the operation wasn't sucessfull
+                    if(spMessage[1] == "1"){
+                        Profile *folProf = getProfile(spMessage[2]);
+                        folProf->addFollower(prof, false);
+                    }
+
+                } else if(spMessage[0] == "SEND"){
+                    // TODO problem with Counter?
+                    getProfile(prof)->notifyFollowers(spMessage[2], spMessage[1]);
+                }
+
+                addServerAcktoMainServerQueue(id);
+
+            } else if(type == Socket::NOTIFICATION){
+                spMessage = Socket::splitUpToMessage(spMessage[1], 3);
                 setGlobalMessageCount(stoi(spMessage[0]));
+
+                // TODO can the order be wrong?
+                getProfile(spMessage[1])->popNotification();
+
                 addServerAcktoMainServerQueue(spMessage[0]);
 
-                // check subtypes
-                //std::cout << "ERROR " << message << std::endl;
+            } else if(type == Socket::CONNECT_OK){
+                // id prof addr port
+                spMessage = Socket::splitUpToMessage(spMessage[1], 4);
+                setGlobalMessageCount(stoi(spMessage[0]));
+
+                Profile *prof = getProfile(spMessage[1]);
+                if (prof == nullptr) {
+                    createProfile(spMessage[1], false);
+                }
+
+                addBackupClientSession(spMessage[1], spMessage[2], spMessage[3]);
+
+                addServerAcktoMainServerQueue(spMessage[0]);
+
+            } else if(type == Socket::EXIT){
+                // id prof addr port
+                spMessage = Socket::splitUpToMessage(spMessage[1], 4);
+                setGlobalMessageCount(stoi(spMessage[0]));
+
+                removeBackupClientSession(spMessage[1], spMessage[2], spMessage[3]);
+
+                addServerAcktoMainServerQueue(spMessage[0]);
+            } else {
+                std::cout << "ERROR " << message << std::endl;
             }
 
         } else if (type == Socket::ELECTION_START) {
@@ -335,7 +413,19 @@ void createConnectionToMainServer(char *name, int port, int port_main) {
 
     //sock->closeSocket();
 
+    for(auto sess: getBackupClientSessions()){
+        std::vector<std::string> spMessage = sock->splitUpToMessage(sess, 3);
+        std::string prof = spMessage[0];
+        std::string addr = spMessage[1];
+        int port = stoi(spMessage[2]);
+        char *char_array = &addr[0];
+
+        startThreads(getSecPort(), Socket::create_addr(char_array, port), getProfile(prof));
+    }
+
     startServerFromBackup(getTercPort());
+
+    saveProfiles();
 }
 
 void startElection(std::shared_ptr<Socket> sock) {

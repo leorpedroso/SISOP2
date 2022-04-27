@@ -34,6 +34,11 @@ void Profile::putNotification(const std::string &message, const std::string &sen
     notificationsMutex.unlock();
 }
 
+void Profile::popNotification(){
+    std::unique_lock<std::mutex> mlock(notificationsMutex);
+    notifications.pop();
+}
+
 // Reads notification from a client if it is not empty, uses mutex to avoid miss data
 Notification Profile::readNotification(const std::string &id){
     std::unique_lock<std::mutex> mlock(notificationsMutex);

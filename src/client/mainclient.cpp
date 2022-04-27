@@ -4,6 +4,7 @@
 #include "../../include/client/notificationmanagerclient.hpp"
 #include <pthread.h>
 #include <signal.h>
+#include<mutex>
 #include "../../include/common/socket.hpp"
 
 // Threads to manage client interface and listen to notifications
@@ -15,6 +16,23 @@ std::string id;
 std::string profile;
 
 Socket sock;
+
+void setAddr(struct sockaddr_in newAddr);
+struct sockaddr_in getAddr();
+
+
+std::mutex _addrMutex;
+struct sockaddr_in _addr;
+
+void setAddr(struct sockaddr_in newAddr){
+    std::unique_lock<std::mutex> mlock(_addrMutex);
+    _addr = newAddr;
+}
+
+struct sockaddr_in getAddr(){
+    std::unique_lock<std::mutex> mlock(_addrMutex);
+    return _addr;
+}
 
 // Struct to save the initial client arguments: profile, ip and connection port
 struct ClientArgs{
@@ -41,7 +59,7 @@ void *interfaceThread(void *arg){
 
 // Send exit message, close socket and kill interface thread
 void signalHandler(int s){
-    sock.send(sock.EXIT + " " + profile + " " + id);
+    sock.send(sock.EXIT + " " + profile + " " + id, getAddr());
     pthread_cancel(interfaceThread_t);
     sock.closeSocket();
 }
@@ -67,7 +85,8 @@ int main(int argc, char*argv[]) {
 
     // Sends message to server requesting login
     sock.setoth_addr(argv[2], std::stoi(argv[3]));
-    sock.send(sock.CONNECT + " " + clientArgs.profile);
+    setAddr(sock.create_addr(argv[2], std::stoi(argv[3])));
+    sock.send(sock.CONNECT + " " + clientArgs.profile, getAddr());
 
 
     while(1){
@@ -90,6 +109,7 @@ int main(int argc, char*argv[]) {
                 std::cout << "ERROR " << result << std::endl;
                 exit(1);
             }
+            setAddr(sock.getoth_addr());
             id = sock.splitUpToMessage(result, 2)[1];
             std::cout << "Starting client" << std::endl;
             break;

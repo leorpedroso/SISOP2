@@ -3,6 +3,7 @@
 #include <string>
 #include "../common/socket.hpp"
 #include <unordered_map>
+#include<mutex>
 
 class Interface{
     private:
@@ -22,6 +23,10 @@ class Interface{
 
     public:
         Interface(const std::string &profile, Socket sock) : profile(profile), sock(sock), notif_counter(0) {}
+
+        void setNotifCounter(int val);
+        void incrementNotifCounter();
+        int getNotifCounter();
         
         // listens for user input and sends the required messages
         void run();

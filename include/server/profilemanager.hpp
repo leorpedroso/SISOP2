@@ -17,7 +17,7 @@ void printProfiles();
 Profile *getProfile(const std::string &name);
 
 // creates a profile
-void createProfile(const std::string &name);
+void createProfile(const std::string &name, bool save = true);
 
 // loads and saves profiles
 void loadProfiles();

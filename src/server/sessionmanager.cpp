@@ -117,8 +117,8 @@ void SessionManager::listen(){
             std::cout<< "thread: " << listen_id  << " SEND_NOTIFICATION" << std::endl;
             std::string prof = spMessage[1];
             std::string msg = spMessage[2];
-            sendAck("SEND " + receiveTimeString + " " + msg);
             getProfile(prof)->notifyFollowers(msg, receiveTimeString);
+            sendAck("SEND " + receiveTimeString + " " + msg);
         // If the type isn't recognized, outputs an error message
         } else {
             std::cout<< "thread: " << listen_id << " ERROR " + message << std::endl;

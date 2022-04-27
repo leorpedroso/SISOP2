@@ -48,6 +48,7 @@ int main(int argc, char *argv[]) {
     int port_ter = atoi(argv[3]);
 
     setTercPort(port_ter);
+    setSecPort(port_sec);
 
     // Gets users from the save file
     createProfileManager(profileFile);

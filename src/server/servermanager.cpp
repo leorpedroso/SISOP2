@@ -10,6 +10,8 @@
 
 int _serverID;
 int _IDCounter;
+bool _isServerPrimary;
+int _secPort;
 int _tercPort;
 std::vector<Server *> _backupServers;
 std::mutex _backupServersMutex;
@@ -56,9 +58,7 @@ int getGlobalMessageCount(){
 
 void setGlobalMessageCount(int count){
     std::unique_lock<std::mutex> mlock(_globalMessageCountMutex);
-
-    if(count > _globalMessageCount)
-        _globalMessageCount = count;
+    _globalMessageCount = count;
 }
 
 void createServerManager(bool isPrimary) {
@@ -73,6 +73,14 @@ void setTercPort(int port){
 
 int getTercPort(){
     return _tercPort;
+}
+
+void setSecPort(int port){
+    _secPort = port;
+}
+
+int getSecPort(){
+    return _secPort;
 }
 
 void setServerIDAndCounter(int val) {

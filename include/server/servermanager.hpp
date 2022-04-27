@@ -18,6 +18,10 @@ int getGlobalMessageCount();
 
 void setGlobalMessageCount(int count);
 
+void setSecPort(int port);
+
+int getSecPort();
+
 void setTercPort(int port);
 
 int getTercPort();

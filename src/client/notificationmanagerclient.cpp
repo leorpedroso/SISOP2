@@ -3,6 +3,9 @@
 #include <unistd.h>
 #include <iostream>
 
+void setAddr(struct sockaddr_in newAddr);
+struct sockaddr_in getAddr();
+
 // Receives a message from the server and process it
 void NotificationManager::listen(){
     while(1){
@@ -47,6 +50,19 @@ void NotificationManager::listen(){
                     std::cout << "ERROR " << input << std::endl; 
             }
         // Message of error in case the notification is invalid
+        } else if (type == sock.CONNECT_NOT_OK){
+            std::cout << "ERROR " << input << std::endl;
+            exit(1);
+        } else if(type == sock.CONNECT_OK){
+            std::vector<std::string> spMessage = sock.splitUpToMessage(input, 2);
+            if(spMessage.size() < 2){
+                std::cout << "ERROR " << input << std::endl;
+                exit(1);
+            }
+            std::cout << "NEW SERVER" << std::endl;
+            interface.setNotifCounter(0);
+            // id = sock.splitUpToMessage(result, 2)[1];
+            setAddr(sock.getoth_addr());
         } else {
             std::cout << "ERROR " << input << std::endl;
         }

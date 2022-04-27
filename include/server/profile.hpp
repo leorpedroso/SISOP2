@@ -54,6 +54,8 @@ class Profile{
 
         //  puts notification on list
         void putNotification(const std::string &message, const std::string &sender, const std::string &time);
+        // pops notification
+        void popNotification();
         // reads notification
         Notification readNotification(const std::string &id);
         // checks if can read a notification using a thread id
