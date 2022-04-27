@@ -1,4 +1,6 @@
 #include "../../include/server/notification.hpp"
+#include "../../include/server/servermanager.hpp"
+
 
 // Gets notification message
 const std::string &Notification::getMessage() const {
@@ -13,7 +15,15 @@ const std::string &Notification::getSender() const {
 // Gets the time from the notification
 const std::string &Notification::getTime() const {
     return time;
-}       
+}
+
+int Notification::getID(){
+    return id;
+}
+
+std::shared_ptr<Counter> Notification::getCount(){
+    return count;
+}
 
 // Increments read from the notification
 void Notification::incrementRead() {

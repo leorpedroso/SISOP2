@@ -14,6 +14,8 @@ bool getMainServerAliveSent();
 
 void addAlivetoMainServerQueue();
 
+void addServerAcktoMainServerQueue(const std::string &id);
+
 bool serverSessionClosed();
 
 void closeServerSession();

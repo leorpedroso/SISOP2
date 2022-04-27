@@ -69,26 +69,34 @@ int main(int argc, char*argv[]) {
     sock.setoth_addr(argv[2], std::stoi(argv[3]));
     sock.send(sock.CONNECT + " " + clientArgs.profile);
 
-    // Listen to server
-    std::string result = sock.listen();
-    std::string type = sock.getTypeMessage(result);
 
-    // In case socket doesn't listen to a connection working, exit with error
-    // If the connection is working, process start message
-    if (type == sock.CONNECT_NOT_OK){
-        std::cout << "ERROR " << result << std::endl;
-        exit(1);
-    } else if(type == sock.CONNECT_OK){
-        std::vector<std::string> spMessage = sock.splitUpToMessage(result, 2);
-        if(spMessage.size() < 2){
+    while(1){
+        // Listen to server
+        std::string result = sock.listen();
+
+        if (result=="")
+            continue;
+
+        std::string type = sock.getTypeMessage(result);
+
+        // In case socket doesn't listen to a connection working, exit with error
+        // If the connection is working, process start message
+        if (type == sock.CONNECT_NOT_OK){
+            std::cout << "ERROR " << result << std::endl;
+            exit(1);
+        } else if(type == sock.CONNECT_OK){
+            std::vector<std::string> spMessage = sock.splitUpToMessage(result, 2);
+            if(spMessage.size() < 2){
+                std::cout << "ERROR " << result << std::endl;
+                exit(1);
+            }
+            id = sock.splitUpToMessage(result, 2)[1];
+            std::cout << "Starting client" << std::endl;
+            break;
+        } else {
             std::cout << "ERROR " << result << std::endl;
             exit(1);
         }
-        id = sock.splitUpToMessage(result, 2)[1];
-        std::cout << "Starting client" << std::endl;
-    } else {
-        std::cout << "ERROR " << result << std::endl;
-        exit(1);
     }
 
     // Creates interface and notification client threads

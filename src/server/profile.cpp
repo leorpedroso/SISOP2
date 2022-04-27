@@ -1,5 +1,6 @@
 #include "../../include/server/profile.hpp"
 #include "../../include/server/profilemanager.hpp"
+#include "../../include/server/servermanager.hpp"
 #include <iostream>
 #include <chrono>
 
@@ -7,7 +8,8 @@
 const int Profile::MAX_SESSIONS = 2;
 
 // Returns the profile name
-const std::string &Profile::getName() const{
+const std::string &Profile::getName(){
+    std::unique_lock<std::mutex> mlock(nameMutex);
     return profileName;
 }
 
@@ -20,7 +22,14 @@ std::unordered_set<std::string> Profile::getFollowers(){
 // adds the profile notification, uses a mutex to avoid sending corrupted data or sending to wrong subscribers
 void Profile::putNotification(const std::string &message, const std::string &sender, const std::string &time){
     notificationsMutex.lock();
-    notifications.push(Notification(message, sender, time));
+
+    int id = getGlobalMessageCount();
+    // -1 forces the notification to be blocked until client is connected and the message will be send with readNotification
+    std::shared_ptr<Counter> count(std::make_shared<Counter>(-1));
+
+    addCounterToMap(id, count);
+
+    notifications.push(Notification(message, sender, time, id, count));
     notEmpty.notify_all();
     notificationsMutex.unlock();
 }
@@ -33,6 +42,17 @@ Notification Profile::readNotification(const std::string &id){
     if (notEmpty.wait_for(mlock, std::chrono::microseconds(2), [this]{return !notifications.empty();}) == false)
         return Notification("", "", "");
     Notification &notificationRef = notifications.front();
+
+    if(notificationRef.getCount()->getValue() == -1){
+        // message will finally be sent, can be considered sent on the backup servers
+        notificationRef.getCount()->setValue(getNumberServers());
+        addMessagetoServers(Message(Socket::NOTIFICATION, std::to_string(notificationRef.getID()) + " " + getName() + " " + notificationRef.getMessage()));
+    }
+
+    if(notificationRef.getCount()->getValue() != 0){
+        return Notification("", "", "");
+    }
+
     notificationRef.incrementRead();
     Notification notification = notificationRef;
 
@@ -80,7 +100,7 @@ bool Profile::addFollower(const std::string &follower, bool save){
 // Sends received notification to the profile's followers
 void Profile::notifyFollowers(const std::string &message, const std::string &time){
     for (auto fol:getFollowers()){
-        getProfile(fol)->putNotification(message, profileName, time);
+        getProfile(fol)->putNotification(message, getName(), time);
     }
 }
 

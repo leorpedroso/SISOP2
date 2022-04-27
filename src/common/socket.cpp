@@ -28,6 +28,7 @@ const std::string Socket::NEW_SERVER = "12";
 const std::string Socket::ELECTION_START = "13";
 const std::string Socket::ELECTION_ANSWER = "14";
 const std::string Socket::ELECTION_COORDINATOR = "15";
+const std::string Socket::CONNECT_SERVER_OK = "16";
 const int Socket::MAX_MESSAGE_SIZE = 256;
 
 // Opens socket connection that will be used between server and client
@@ -188,6 +189,13 @@ std::string Socket::get_addr_string(struct sockaddr_in addr) {
     getnameinfo((struct sockaddr *)&addr, sizeof addr, temp, 256, 0, 0, 0);
     return std::string(temp);
 }
+
+std::string Socket::get_addr_port_string(struct sockaddr_in addr) {
+    char temp[256];
+    getnameinfo((struct sockaddr *)&addr, sizeof addr, temp, 256, 0, 0, 0);
+    return std::string(temp) + " " + std::to_string(ntohs(addr.sin_port));
+}
+
 // Splits a message in lines, reading from a stream object
 std::vector<std::string> Socket::splitMessage(const std::string &message) {
     std::vector<std::string> spMessage;

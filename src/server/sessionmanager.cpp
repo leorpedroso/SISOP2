@@ -1,7 +1,10 @@
 #include "../../include/server/sessionmanager.hpp"
 #include <iostream>
 #include "../../include/server/profilemanager.hpp"
+#include "../../include/server/servermanager.hpp"
 #include "../../include/server/notification.hpp"
+#include "../../include/server/counter.hpp"
+#include "../../include/server/ack.hpp"
 #include <sstream>
 #include <chrono>
 #include <iomanip>
@@ -12,6 +15,7 @@ SessionManager::SessionManager(int port, struct sockaddr_in addr, Profile *_prof
     sock.setoth_addr(addr);
     sock.setConnect();
     profileName = prof->getName();
+    addrString = Socket::get_addr_port_string(addr);
     prof->incrementSessions();
     session_closed = false;
     notif_counter = 0;    
@@ -28,7 +32,19 @@ void SessionManager::send(){
     ss << std::this_thread::get_id();
     send_id = ss.str();
     std::cout << "start thread send: " << send_id << std::endl;
-    sock.send(Socket::CONNECT_OK + " " + send_id);
+    {
+    int temp_id = getGlobalMessageCount();
+    std::shared_ptr<Counter> count(std::make_shared<Counter>(getNumberServers()));
+    addCounterToMap(temp_id, count);
+    addMessagetoServers(Message(Socket::CONNECT_OK, std::to_string(temp_id) + " " + getProfileName() + " " + getAddrString()));
+
+    while(1){
+        if(count->getValue() == 0){
+            sock.send(Socket::CONNECT_OK + " " + send_id);
+            break;
+        }
+    }
+    }
 
     while(1){
         // If the session was closed, ends the send
@@ -78,6 +94,8 @@ void SessionManager::listen(){
             std::string sess = spMessage[2];
             closeSession();
             getProfile(prof)->decrementSessions();
+            // getGlobalMessageCount because doesn't need a return
+            addMessagetoServers(Message(Socket::EXIT, std::to_string(getGlobalMessageCount()) + " "  + getProfileName() + " " + getAddrString()));
             break;
         // If the type is FOLLOW, adds the profile to the requested profile's followers if it exists. Sends and ACK with feedback from operation's output.
         } else if (type == Socket::FOLLOW){
@@ -125,7 +143,14 @@ void SessionManager::closeSession() {
 // Put a message in the ACK buffer to send it, uses mutex to avoid miss data
 void SessionManager::sendAck(std::string msg) {
     std::unique_lock<std::mutex> lck(ack_mtx);
-    ack_msgs.push(msg);
+
+    int id = getGlobalMessageCount();
+    std::shared_ptr<Counter> count(std::make_shared<Counter>(getNumberServers()));
+    addCounterToMap(id, count);
+
+    addMessagetoServers(Message(Socket::ACK, std::to_string(id) + " " + getProfileName() + " " + msg));
+
+    ack_msgs.push(Ack(msg, id, count));
     ack_cv.notify_one();
 }
 
@@ -135,9 +160,23 @@ void SessionManager::verifySendAck() {
     std::unique_lock<std::mutex> lck(ack_mtx);
     if (ack_cv.wait_for(lck, std::chrono::microseconds(2), [this]{return !ack_msgs.empty();}) == false)
         return;
-    std::string msg = ack_msgs.front();
+    Ack msg = ack_msgs.front();
+    if(msg.getCount()->getValue() != 0){
+        return;
+    }
     ack_msgs.pop();
-    sock.send(Socket::ACK + " " + msg);
+    sock.send(Socket::ACK + " " + msg.getArgs());
+}
+
+
+const std::string &SessionManager::getAddrString(){
+    std::unique_lock<std::mutex> mlock(addrStringMutex);
+    return addrString;
+}
+
+const std::string &SessionManager::getProfileName(){
+    std::unique_lock<std::mutex> mlock(profileNameMutex);
+    return profileName;
 }
 
 // Returns the actual local time based on the server computer

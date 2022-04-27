@@ -104,6 +104,12 @@ void addAlivetoMainServerQueue() {
     _msgs_cv.notify_all();
 }
 
+void addServerAcktoMainServerQueue(const std::string &id) {
+    std::unique_lock<std::mutex> lck(_msgs_mtx);
+    _msgs.push(Message(id, ""));
+    _msgs_cv.notify_all();
+}
+
 bool serverSessionClosed() {
     _serverSessionMutex.lock();
 
@@ -171,7 +177,7 @@ void AliveThread() {
 
 
     while (1) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
         if (getMainServerAlive()) {
             setMainServerAlive(false);
             setMainServerAliveSent(false);
@@ -233,6 +239,14 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
                 addServer(id, name, port);
             } else if (type == Socket::ALIVE) {
                 setMainServerAlive(true);
+            } else {
+                // TEST
+                spMessage = Socket::splitUpToMessage(spMessage[1], 2);
+                setGlobalMessageCount(stoi(spMessage[0]));
+                addServerAcktoMainServerQueue(spMessage[0]);
+
+                // check subtypes
+                //std::cout << "ERROR " << message << std::endl;
             }
 
         } else if (type == Socket::ELECTION_START) {
@@ -255,9 +269,12 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
             setCoordinator(false);
             setMainServer(sock->getoth_addr(), coordPort);
             removeFromBackupServers(coordId);
-        } else if (type == Socket::CONNECT_OK){
+        } else if (type == Socket::CONNECT_SERVER_OK){
             //setMainServer(sock->getoth_addr());
         } else {
+            // TEST
+            //spMessage = Socket::splitUpToMessage(spMessage[1], 2);
+            //addServerAcktoMainServerQueue(spMessage[0]);
             std::cout << "ERROR " << message << std::endl;
         }
     }
@@ -284,7 +301,7 @@ void createConnectionToMainServer(char *name, int port, int port_main) {
     if (type == Socket::CONNECT_NOT_OK) {
         std::cerr << "ERROR " << result << std::endl;
         exit(1);
-    } else if (type == Socket::CONNECT_OK) {
+    } else if (type == Socket::CONNECT_SERVER_OK) {
         std::vector<std::string> spMessage = sock->splitUpToMessage(result, 2);
         if (spMessage.size() < 2) {
             std::cout << "ERROR " << result << std::endl;

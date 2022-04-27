@@ -13,6 +13,7 @@
 #include <netdb.h>
 #include <stdio.h>
 #include "../common/socket.hpp"
+#include "../server/ack.hpp"
 #include "../server/profile.hpp"
 #include "../server/profilemanager.hpp"
 
@@ -22,11 +23,14 @@ class SessionManager{
         Profile *prof; // profile
 
         std::string profileName; // profile name
+        std::mutex profileNameMutex;
 
         std::string send_id; // send thread id
         std::string listen_id; // listen thread id
 
         struct sockaddr_in addr; // addr
+        std::string addrString;
+        std::mutex addrStringMutex;
 
         bool session_closed; // boolean for checking if the session is closed
 
@@ -35,7 +39,7 @@ class SessionManager{
 
         std::condition_variable ack_cv; // condition variable that indicates that ack_msgs is not empty
 
-        std::queue<std::string> ack_msgs; // queue for ack messages
+        std::queue<Ack> ack_msgs; // queue for ack messages
 
         int notif_counter; // seqn for notifications
 
@@ -53,6 +57,9 @@ class SessionManager{
 
         // returns current time
         std::string getTime();
+
+        const std::string &getAddrString();
+        const std::string &getProfileName();
 
     public:
         SessionManager(int port, struct sockaddr_in addr, Profile *_prof);

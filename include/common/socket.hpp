@@ -45,6 +45,7 @@ class Socket {
     const static std::string ELECTION_START;       // 13
     const static std::string ELECTION_ANSWER;      // 14
     const static std::string ELECTION_COORDINATOR; // 15
+    const static std::string CONNECT_SERVER_OK;
 
     // max size for a socket message
     const static int MAX_MESSAGE_SIZE;
@@ -78,6 +79,7 @@ class Socket {
     void setoth_addr(char *hostname, int port);
     void setoth_addr(struct sockaddr_in new_addr);
     static std::string get_addr_string(struct sockaddr_in addr);
+    static std::string get_addr_port_string(struct sockaddr_in addr);
 
     // split messages
     static std::vector<std::string> splitMessage(const std::string &message);

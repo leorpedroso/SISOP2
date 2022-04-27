@@ -1,5 +1,6 @@
 #include "../../include/server/backupconnection.hpp"
 #include "../../include/server/message.hpp"
+#include "../../include/server/servermanager.hpp"
 #include<sstream>
 #include<iostream>
 
@@ -18,7 +19,7 @@ void BackupConnection::send(){
     ss << std::this_thread::get_id();
     send_id = ss.str();
     std::cout << "start thread send backup: " << send_id << std::endl;
-    sock.send(Socket::CONNECT_OK + " " + std::to_string(id));
+    sock.send(Socket::CONNECT_SERVER_OK + " " + std::to_string(id));
 
     while(1){
         Message notification = server->popMsg();
@@ -52,6 +53,16 @@ void BackupConnection::listen(){
         // TODO LISTEN TO THE MESSAGES
         if(type == Socket::ALIVE){
            server->addMsg(Message(Socket::ALIVE, "Alive"));
+        } else if(type == Socket::SERVER_ACK){
+            int id = stoi(spMessage[1]);
+
+            auto count = getCounterFromMap(id);
+            if(count != nullptr){
+                count->decrementValue();
+                if(count->getValue() == 0){
+                    removeCounterFromMap(id);
+                }
+            }
         }
     }
     std::cout << "end thread listen backup: " << listen_id << std::endl;

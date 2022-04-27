@@ -49,6 +49,10 @@ int main(int argc, char *argv[]) {
 
     setTercPort(port_ter);
 
+    // Gets users from the save file
+    createProfileManager(profileFile);
+    printProfiles();
+
     if (argc == 7) {
         int port_main = atoi(argv[6]);
         int port_quart = atoi(argv[4]);
@@ -63,10 +67,6 @@ int main(int argc, char *argv[]) {
         std::cerr << " " << argv[0] << " <porta_primaria> <porta_secundaria> <porta_terciaria> <porta_quaternaria> <primary_name> <port_main>" << std::endl;
         exit(1);
     }
-
-    // Gets users from the save file
-    createProfileManager(profileFile);
-    printProfiles();
 
     // Opens connection through socket
     Socket sock(port_prim);

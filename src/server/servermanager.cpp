@@ -1,20 +1,69 @@
 #include "../../include/server/servermanager.hpp"
 
 #include "../../include/server/backupconnection.hpp"
+#include "../../include/server/profilemanager.hpp"
 #include <iostream>
 #include <thread>
 #include <mutex>
+#include<memory>
+#include"../../include/server/counter.hpp"
 
-bool _isServerPrimary;
 int _serverID;
 int _IDCounter;
 int _tercPort;
 std::vector<Server *> _backupServers;
 std::mutex _backupServersMutex;
 std::mutex _serverIDMutex;
+std::mutex _globalMessageCountMutex;
+
+
+std::unordered_map<int, std::shared_ptr<Counter>> _counterMap;
+std::mutex _counterMapMutex;
+
+int _globalMessageCount;
+
+void addCounterToMap(int id, std::shared_ptr<Counter> count){
+    std::unique_lock<std::mutex> mlock(_counterMapMutex);
+    _counterMap.insert({id, count});
+}
+
+std::shared_ptr<Counter> getCounterFromMap(int id){
+    std::unique_lock<std::mutex> mlock(_counterMapMutex);
+    auto pos = _counterMap.find(id);
+    if(pos != _counterMap.end()){
+        return pos->second;
+    } else{
+        return nullptr;
+    }
+}
+
+void removeCounterFromMap(int id){
+    std::unique_lock<std::mutex> mlock(_counterMapMutex);
+
+    auto pos = _counterMap.find(id);
+    if(pos != _counterMap.end()){
+        _counterMap.erase(id);
+    }
+}
+
+
+
+int getGlobalMessageCount(){
+    std::unique_lock<std::mutex> mlock(_globalMessageCountMutex);
+
+    return ++_globalMessageCount;
+}
+
+void setGlobalMessageCount(int count){
+    std::unique_lock<std::mutex> mlock(_globalMessageCountMutex);
+
+    if(count > _globalMessageCount)
+        _globalMessageCount = count;
+}
 
 void createServerManager(bool isPrimary) {
     _isServerPrimary = isPrimary;
+    _globalMessageCount = 0;
     _serverID = 0;
 }
 
@@ -35,6 +84,12 @@ void setServerIDAndCounter(int val) {
 int getServerID() {
     std::unique_lock<std::mutex> mlock(_serverIDMutex);
     return _serverID;
+}
+
+int getNumberServers(){
+    std::unique_lock<std::mutex> mlock(_backupServersMutex);
+
+    return _backupServers.size();
 }
 
 void printServers() {

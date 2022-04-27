@@ -34,6 +34,9 @@ class Profile{
         std::mutex readMapMutex; // mutex for readMap
         std::mutex followersMutex; // mutex for followers set
 
+
+        std::mutex nameMutex;
+
         // condition variable that indicates that the notification queue is not empty
         std::condition_variable notEmpty;
         
@@ -46,7 +49,7 @@ class Profile{
         Profile(const std::string &profileName): profileName(profileName), numSessions(0){};
 
         // getters for name and followers
-        const std::string &getName() const;
+        const std::string &getName();
         std::unordered_set<std::string> getFollowers();
 
         //  puts notification on list
