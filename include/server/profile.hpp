@@ -9,6 +9,7 @@
 #include<thread>
 #include<memory>
 #include<condition_variable>
+#include"server.hpp"
 #include<unordered_set>
 
 class Profile{
@@ -65,6 +66,8 @@ class Profile{
         bool addFollower(const std::string &follower, bool save = false);
         // adds a notification from this profile to its followers
         void notifyFollowers(const std::string &message, const std::string &time);
+
+        void sendAllNotifications(Server *server);
 
         // functions for changing number of sessions
         void incrementSessions();

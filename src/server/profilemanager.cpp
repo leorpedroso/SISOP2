@@ -16,6 +16,13 @@ void createProfileManager(const std::string &profileFile){
     loadProfiles();
 }
 
+void sendPendingNotifications(Server *server){
+    std::unique_lock<std::mutex> mlock(_profileMapMutex);
+    for(auto &any: _profiles){
+        any.second->sendAllNotifications(server);
+    }
+}
+
 // Print on the server screen all the profiles saved and their followers
 void printProfiles(){
     std::unique_lock<std::mutex> mlock(_profileMapMutex);

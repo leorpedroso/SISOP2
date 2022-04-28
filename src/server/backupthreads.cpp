@@ -276,6 +276,7 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
                 // data1(FOLLOW) -> follower
                 // data0(SEND) -> time
                 // data1(SEND) -> string
+                // data1(ADD_NOT) -> sender string
                 spMessage = Socket::splitUpToMessage(spMessage[2], 3);
 
                 if(spMessage[0] == "FOLLOW"){
@@ -288,6 +289,10 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
                 } else if(spMessage[0] == "SEND"){
                     // TODO problem with Counter?
                     getProfile(prof)->notifyFollowers(spMessage[2], spMessage[1]);
+                } else if(spMessage[0] == "ADD_NOT"){
+                    std::string time = spMessage[1];
+                    spMessage = Socket::splitUpToMessage(spMessage[2], 2);
+                    getProfile(prof)->putNotification(spMessage[1], spMessage[0], time);
                 }
 
                 addServerAcktoMainServerQueue(id);

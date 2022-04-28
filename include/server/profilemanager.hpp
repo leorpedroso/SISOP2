@@ -4,6 +4,7 @@
 #include<unordered_map>
 #include<mutex>
 #include"profile.hpp"
+#include"server.hpp"
 
 // Functions for managing profiles
 
@@ -18,6 +19,8 @@ Profile *getProfile(const std::string &name);
 
 // creates a profile
 void createProfile(const std::string &name, bool save = true);
+
+void sendPendingNotifications(Server *server);
 
 // loads and saves profiles
 void loadProfiles();

@@ -34,6 +34,17 @@ void Profile::putNotification(const std::string &message, const std::string &sen
     notificationsMutex.unlock();
 }
 
+void Profile::sendAllNotifications(Server *server){
+    std::unique_lock<std::mutex> mlock(notificationsMutex);
+    std::queue<Notification> tempNotifications = notifications;
+    
+    while(!tempNotifications.empty()){
+        Notification &notificationRef = tempNotifications.front();
+        server->addMsg(Message(Socket::ACK, std::to_string(notificationRef.getID()) + " " + getName() + " ADD_NOT " + notificationRef.getTime() + " " + notificationRef.getSender() + " " + notificationRef.getMessage()));
+        tempNotifications.pop();
+    }
+}
+
 void Profile::popNotification(){
     std::unique_lock<std::mutex> mlock(notificationsMutex);
     notifications.pop();
