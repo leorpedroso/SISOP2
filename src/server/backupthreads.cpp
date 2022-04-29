@@ -442,7 +442,7 @@ void startElection(std::shared_ptr<Socket> sock) {
     std::cout << "Election started." << std::endl;
 
     // tries to send the previous coordinator a message
-    addAlivetoMainServerQueue();
+    sock->send(Socket::ALIVE + " " + Socket::ALIVE + " " + "ALIVE", getMainServer());
 
     for (Server *server : getBackupServers()) {
         if (server->getID() > getServerID()) {
