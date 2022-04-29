@@ -263,6 +263,7 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
                 addServer(id, name, port);
             } else if (type == Socket::ALIVE) {
                 setMainServerAlive(true);
+                setCoordinator(false);
             } else if (type == Socket::ACK){
                 // id prof msg
                 spMessage = Socket::splitUpToMessage(spMessage[1], 3);
@@ -412,6 +413,7 @@ void createConnectionToMainServer(char *name, int port, int port_main) {
         startElection(sock);
 
         if(isCoordinator()) {
+            std::cout << "NEW COORDINATOR." << std::endl;
             break;
         }
     }
@@ -438,6 +440,9 @@ void startElection(std::shared_ptr<Socket> sock) {
     setCoordinator(true);
 
     std::cout << "Election started." << std::endl;
+
+    // tries to send the previous coordinator a message
+    addAlivetoMainServerQueue();
 
     for (Server *server : getBackupServers()) {
         if (server->getID() > getServerID()) {
