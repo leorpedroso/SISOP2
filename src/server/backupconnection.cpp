@@ -26,7 +26,7 @@ void BackupConnection::send(){
         // If it is empty, keep waiting for new messages
         if(notification.getType() == "")
             continue;
-        // Sends notification read to the client
+        // Sends notification read to the backup server
         sock.send(Socket::SERVER_UPDATE + " " + notification.getType() + " " + notification.getArgs());
     }
     std::cout << "end thread send backup: " << send_id << std::endl;

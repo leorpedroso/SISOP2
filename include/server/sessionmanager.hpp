@@ -22,13 +22,16 @@ class SessionManager{
         Socket sock; // socket
         Profile *prof; // profile
 
-        std::string profileName; // profile name
+        // profile name and mutex
+        std::string profileName; 
         std::mutex profileNameMutex;
 
         std::string send_id; // send thread id
         std::string listen_id; // listen thread id
 
         struct sockaddr_in addr; // addr
+
+        // addr string and mutex
         std::string addrString;
         std::mutex addrStringMutex;
 
@@ -58,6 +61,7 @@ class SessionManager{
         // returns current time
         std::string getTime();
 
+        // getters for string and name with mutexes
         const std::string &getAddrString();
         const std::string &getProfileName();
 

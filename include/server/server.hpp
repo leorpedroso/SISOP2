@@ -9,14 +9,16 @@
 
 class Server{
     private:
+        // server name, address, id and port
         std::string name;
         struct sockaddr_in addr;
         int ID;
         int port;
 
         std::mutex msgs_mtx; // mutex for update_msgs queue
-        std::condition_variable msgs_cv; // condition variable that indicates that update_msgs is not empty
+        std::condition_variable msgs_cv; // condition variable that indicates that msgs is not empty
 
+        // mutexes for name, addr, ID, port
         std::mutex name_mtx;
         std::mutex id_mtx;
         std::mutex port_mtx;
@@ -28,11 +30,14 @@ class Server{
         Server(struct sockaddr_in addr, int ID): addr(addr), name(Socket::get_addr_string(addr)), ID(ID), port(ntohs(addr.sin_port)) {}
         Server(int ID, const std::string &name, int port): ID(ID), name(name), port(port) {}
 
+        // getters
         const std::string &getName();       
         const int &getID();      
         const int &getPort();      
         const struct sockaddr_in &getAddr();   
 
+        // add message to server queue
         void addMsg(Message msg);
+        // pop message from queue
         Message popMsg();
 };

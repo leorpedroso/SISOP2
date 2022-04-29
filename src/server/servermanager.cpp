@@ -187,7 +187,7 @@ void sendBackupThread(std::shared_ptr<BackupConnection> sess) {
     sess->send();
 }
 
-// Runs the the session manager's listen method. (Required to create a listen thread correctly)
+
 void listenBackupThread(std::shared_ptr<BackupConnection> sess) {
     sess->listen();
 }

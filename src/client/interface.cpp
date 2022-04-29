@@ -6,10 +6,12 @@
 #include <signal.h>
 #include <utility>
 
-std::mutex notif_counter_mutex;
-
+// setters/getter for socket addr with mutex
 void setAddr(struct sockaddr_in newAddr);
 struct sockaddr_in getAddr();
+
+// mutex for notification counter
+std::mutex notif_counter_mutex;
 
 // Runs interface of client to treat input and output messages
 void Interface::run(){
@@ -104,15 +106,16 @@ void Interface::updateNotifications(int given_counter, const std::string &notifi
     }
 }
 
-
 void Interface::setNotifCounter(int val){
     std::unique_lock<std::mutex> mlock(notif_counter_mutex);
     notif_counter = val;
 }
+
 void Interface::incrementNotifCounter(){
     std::unique_lock<std::mutex> mlock(notif_counter_mutex);
     ++notif_counter;
 }
+
 int Interface::getNotifCounter(){
     std::unique_lock<std::mutex> mlock(notif_counter_mutex);
     return notif_counter; 

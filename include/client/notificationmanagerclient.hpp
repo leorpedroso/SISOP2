@@ -7,8 +7,8 @@
 class NotificationManager{
     private:
         std::string profile; // profile name
-        Socket sock;
-        Interface interface;
+        Socket sock; // socket
+        Interface interface; // interface
 
     public:
         NotificationManager(const std::string &profile, Socket sock, const Interface &interface) : 

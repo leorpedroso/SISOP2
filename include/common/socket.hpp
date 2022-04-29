@@ -38,14 +38,14 @@ class Socket {
     const static std::string NOTIFICATION;         // 6 <seqn> <sender> <time> <message>
     const static std::string ACK;                  // 7 <ack_type> <args>
     const static std::string CONNECT_SERVER;       // 8
-    const static std::string SERVER_UPDATE;        // 9 ?
-    const static std::string ALIVE;                // 10 ?
-    const static std::string SERVER_ACK;           // 11 ?
-    const static std::string NEW_SERVER;           // 12 ?
+    const static std::string SERVER_UPDATE;        // 9
+    const static std::string ALIVE;                // 10
+    const static std::string SERVER_ACK;           // 11
+    const static std::string NEW_SERVER;           // 12
     const static std::string ELECTION_START;       // 13
     const static std::string ELECTION_ANSWER;      // 14
     const static std::string ELECTION_COORDINATOR; // 15
-    const static std::string CONNECT_SERVER_OK;
+    const static std::string CONNECT_SERVER_OK;    // 16
 
     // max size for a socket message
     const static int MAX_MESSAGE_SIZE;
@@ -71,6 +71,7 @@ class Socket {
     // disables logging
     void disableLog();
 
+    // returns string with current time
     static std::string getTime();
 
     // getter and setters for the communicating address and port

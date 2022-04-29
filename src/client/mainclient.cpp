@@ -17,18 +17,20 @@ std::string profile;
 
 Socket sock;
 
+// setters/getter for socket addr with mutex
 void setAddr(struct sockaddr_in newAddr);
 struct sockaddr_in getAddr();
 
-
+// addr mutex
 std::mutex _addrMutex;
+
+// addr
 struct sockaddr_in _addr;
 
 void setAddr(struct sockaddr_in newAddr){
     std::unique_lock<std::mutex> mlock(_addrMutex);
     _addr = newAddr;
 }
-
 struct sockaddr_in getAddr(){
     std::unique_lock<std::mutex> mlock(_addrMutex);
     return _addr;
@@ -109,8 +111,10 @@ int main(int argc, char*argv[]) {
                 std::cout << "ERROR " << result << std::endl;
                 exit(1);
             }
+            // set id and addr
             setAddr(sock.getoth_addr());
             id = sock.splitUpToMessage(result, 2)[1];
+
             std::cout << "Starting client" << std::endl;
             break;
         } else {

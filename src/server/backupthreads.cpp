@@ -21,10 +21,10 @@ std::mutex _MainServerMutex;
 std::unordered_set<std::string> _backupClientSessions;
 std::mutex _backupClientSessionsMutex;
 
-std::mutex _msgs_mtx;             // mutex for update_msgs queue
-std::condition_variable _msgs_cv; // condition variable that indicates that update_msgs is not empty
+std::mutex _msgs_mtx;             // mutex for _msgs queue
+std::condition_variable _msgs_cv; // condition variable that indicates that _msgs is not empty
 
-std::queue<Message> _msgs; // queue for update messages
+std::queue<Message> _msgs; // queue for messages
 
 void startThreads(int port_sec, struct sockaddr_in addr, Profile *_prof);
 
@@ -183,7 +183,7 @@ void createServerSendThread(std::shared_ptr<Socket> sock) {
             sock->send(Socket::ALIVE + " " + notification.getType() + " " + notification.getArgs(), getMainServer());
             setMainServerAliveSent(true);
         } else {
-            // Sends notification read to the client
+            // Sends notification read to the main server
             sock->send(Socket::SERVER_ACK + " " + notification.getType() + " " + notification.getArgs(), getMainServer());
         }
     }
@@ -232,11 +232,6 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
     std::cout << "start thread listen main: " << listen_id << std::endl;
 
     while (1) {
-        // listen for valid client messages
-        // if (serverSessionClosed()) {
-        //     std::cout << "listen closed." << std::endl;
-        //     break;
-        // }
         if(isCoordinator() && isElectionOver())
             break;
 
@@ -334,8 +329,6 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
             }
 
         } else if (type == Socket::ELECTION_START) {
-
-            // PROBLEMA ???
             for (Server *server : getBackupServers()) {
                 if (server->getID() == stoi(spMessage[1])) {
                     sock->send(Socket::ELECTION_ANSWER + " ", 
@@ -356,9 +349,6 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
         } else if (type == Socket::CONNECT_SERVER_OK){
             //setMainServer(sock->getoth_addr());
         } else {
-            // TEST
-            //spMessage = Socket::splitUpToMessage(spMessage[1], 2);
-            //addServerAcktoMainServerQueue(spMessage[0]);
             std::cout << "ERROR " << message << std::endl;
         }
     }

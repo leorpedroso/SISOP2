@@ -49,7 +49,6 @@ void NotificationManager::listen(){
                 else 
                     std::cout << "ERROR " << input << std::endl; 
             }
-        // Message of error in case the notification is invalid
         } else if (type == sock.CONNECT_NOT_OK){
             std::cout << "ERROR " << input << std::endl;
             exit(1);
@@ -60,9 +59,14 @@ void NotificationManager::listen(){
                 exit(1);
             }
             std::cout << "NEW SERVER" << std::endl;
+            // resets notification counter because a new session was started in a new server
             interface.setNotifCounter(0);
-            // id = sock.splitUpToMessage(result, 2)[1];
+            // sets new addr
             setAddr(sock.getoth_addr());
+
+            // id = sock.splitUpToMessage(result, 2)[1];
+
+        // Message of error in case the notification is invalid
         } else {
             std::cout << "ERROR " << input << std::endl;
         }

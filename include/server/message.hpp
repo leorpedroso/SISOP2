@@ -4,6 +4,7 @@
 
 class Message{
     private:
+        // message type and args
         std::string type;
         std::string args;
 

@@ -7,8 +7,11 @@
 
 class Ack{
     private:
+        // ack arguments
         std::string args;
+        // Counter 
         std::shared_ptr<Counter> count;
+        // ack id
         int id;
 
     public:

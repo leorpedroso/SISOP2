@@ -21,9 +21,9 @@
 class BackupConnection{
     private:
 
-        int id;
+        int id; // server id
 
-        Server *server;
+        Server *server; // server that is connected with main
 
         Socket sock; // socket
 

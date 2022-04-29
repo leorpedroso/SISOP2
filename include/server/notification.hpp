@@ -15,8 +15,10 @@ class Notification{
         // read counter for notification
         int read;
 
+        // notification id
         int id;
 
+        // notification counter
         std::shared_ptr<Counter> count;
 
     public:
@@ -28,7 +30,7 @@ class Notification{
                                                     message(message), sender(sender), time(time), read(0),
                                                     count(count), id(id) {}
                         
-        // getters for message, sender and time
+        // getters for message, sender, time, count, id
         const std::string &getMessage() const;       
         const std::string &getSender() const;       
         const std::string &getTime() const;       

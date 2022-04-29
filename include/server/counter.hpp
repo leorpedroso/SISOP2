@@ -5,8 +5,9 @@
 
 class Counter{
     private:
+        // curent value
         int value;
-
+        // mutex for value
         std::mutex valueMutex;
 
     public:
@@ -14,7 +15,7 @@ class Counter{
 
         // getters
         int getValue();
-        void decrementValue();
-
+        // setters
         void setValue(int val);
+        void decrementValue();
 };

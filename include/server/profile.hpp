@@ -14,8 +14,9 @@
 
 class Profile{
     private:
-        // profilename
+        // profilename and mutex
         std::string profileName;
+        std::mutex nameMutex;
 
         // followers set
         std::unordered_set<std::string> followers;
@@ -35,8 +36,6 @@ class Profile{
         std::mutex readMapMutex; // mutex for readMap
         std::mutex followersMutex; // mutex for followers set
 
-
-        std::mutex nameMutex;
 
         // condition variable that indicates that the notification queue is not empty
         std::condition_variable notEmpty;
@@ -66,7 +65,7 @@ class Profile{
         bool addFollower(const std::string &follower, bool save = false);
         // adds a notification from this profile to its followers
         void notifyFollowers(const std::string &message, const std::string &time);
-
+        // sends all notifications to server
         void sendAllNotifications(Server *server);
 
         // functions for changing number of sessions

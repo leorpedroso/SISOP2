@@ -20,6 +20,7 @@ Profile *getProfile(const std::string &name);
 // creates a profile
 void createProfile(const std::string &name, bool save = true);
 
+// sends all pending notifications from user to server
 void sendPendingNotifications(Server *server);
 
 // loads and saves profiles

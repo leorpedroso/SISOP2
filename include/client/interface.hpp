@@ -8,7 +8,7 @@
 class Interface{
     private:
         std::string profile; // profile name
-        Socket sock;
+        Socket sock; // socket
         int notif_counter; // sequence number for notifications
         std::unordered_map<int, std::string> notif_buffer; // buffer for notifications
         
@@ -24,6 +24,7 @@ class Interface{
     public:
         Interface(const std::string &profile, Socket sock) : profile(profile), sock(sock), notif_counter(0) {}
 
+        // notif_counter getters/setters with mutex
         void setNotifCounter(int val);
         void incrementNotifCounter();
         int getNotifCounter();
