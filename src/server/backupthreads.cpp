@@ -272,11 +272,16 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
         if (type == Socket::SERVER_UPDATE) {
             // server update message
             spMessage = Socket::splitUpToMessage(spMessage[1], 2);
+            if (spMessage.size() < 2)
+                continue;
+
             type = spMessage[0];
 
             if (type == Socket::NEW_SERVER) {
                 // New server connected to main server
                 spMessage = Socket::splitUpToMessage(spMessage[1], 3);
+                if (spMessage.size() < 3)
+                    continue;
 
                 // add server
                 int id = stoi(spMessage[0]);
@@ -292,9 +297,14 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
 
                 // id prof msg
                 spMessage = Socket::splitUpToMessage(spMessage[1], 3);
+                if (spMessage.size() < 3)
+                    continue;
+
                 std::string id = spMessage[0];
                 std::string prof = spMessage[1];
                 std::string message = spMessage[2];
+                Profile *profileProfile = getProfile(prof);
+                // resyncs counter
                 setGlobalMessageCount(stoi(id));
 
                 // message -> textType data0 data1
@@ -304,6 +314,8 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
                 // data1(SEND) -> string
                 // data1(ADD_NOT) -> sender string
                 spMessage = Socket::splitUpToMessage(spMessage[2], 3);
+                if (spMessage.size() < 3)
+                    continue;
 
                 if(spMessage[0] == "FOLLOW"){
                     // Client followed another profile
@@ -312,7 +324,9 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
                     if(spMessage[1] == "1"){
                         // follow profile
                         Profile *folProf = getProfile(spMessage[2]);
-                        folProf->addFollower(prof, false);
+                        if (folProf != nullptr) {
+                            folProf->addFollower(prof, false);
+                        }
                     }
 
                 } else if(spMessage[0] == "SEND"){
@@ -320,14 +334,20 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
 
                     // TODO problem with Counter?
                     // add message to all followers
-                    getProfile(prof)->notifyFollowers(spMessage[2], spMessage[1]);
+                    if(profileProfile != nullptr){
+                        profileProfile->notifyFollowers(spMessage[2], spMessage[1]);
+                    }
                 } else if(spMessage[0] == "ADD_NOT"){
                     // Pending notification
                     std::string time = spMessage[1];
                     spMessage = Socket::splitUpToMessage(spMessage[2], 2);
+                    if (spMessage.size() < 2)
+                        continue;
 
                     // adds notification to profile
-                    getProfile(prof)->putNotification(spMessage[1], spMessage[0], time);
+                    if(profileProfile != nullptr){
+                        profileProfile->putNotification(spMessage[1], spMessage[0], time);
+                    }
                 }
                 
                 // ack to main server
@@ -336,11 +356,18 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
             } else if(type == Socket::NOTIFICATION){
                 // Notificaiton being sent to client
                 spMessage = Socket::splitUpToMessage(spMessage[1], 3);
+                if (spMessage.size() < 3)
+                    continue;
+
+                // resyncs counter
                 setGlobalMessageCount(stoi(spMessage[0]));
 
                 // TODO can the order be wrong?
                 // pops the last notification because it is no longer pending
-                getProfile(spMessage[1])->popNotification();
+                Profile *profTemp = getProfile(spMessage[1]);
+                if (profTemp != nullptr) {
+                    profTemp->popNotification();
+                }
                 // ack to main server
                 addServerAcktoMainServerQueue(spMessage[0]);
 
@@ -349,6 +376,10 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
 
                 // id prof addr port
                 spMessage = Socket::splitUpToMessage(spMessage[1], 4);
+                if (spMessage.size() < 4)
+                    continue;
+
+                // resyncs counter
                 setGlobalMessageCount(stoi(spMessage[0]));
 
                 // create profile if isn't created yet
@@ -366,6 +397,10 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
 
                 // id prof addr port
                 spMessage = Socket::splitUpToMessage(spMessage[1], 4);
+                if (spMessage.size() < 4)
+                    continue;
+
+                // resyncs counter
                 setGlobalMessageCount(stoi(spMessage[0]));
 
                 // removes active session from client
@@ -393,6 +428,8 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
         } else if (type == Socket::ELECTION_COORDINATOR) {
             // new coordiantor message
             spMessage = Socket::splitUpToMessage(spMessage[1], 2);
+            if (spMessage.size() < 2)
+                continue;
             int coordId = stoi(spMessage[0]);
             int coordPort = stoi(spMessage[1]);
 
@@ -407,7 +444,8 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
             std::cout << "ERROR " << message << std::endl;
         }
     }
-
+    // can close socket because listen will be the last thread alive that accesses the socket
+    sock->closeSocket();
     std::cout << "end thread listen main: " << listen_id << std::endl;
 }
 
@@ -437,7 +475,7 @@ void createConnectionToMainServer(char *name, int port, int port_main) {
             std::cout << "ERROR " << result << std::endl;
             exit(1);
         }
-        std::string idString = sock->splitUpToMessage(result, 2)[1];
+        std::string idString = spMessage[1];
         setServerIDAndCounter(stoi(idString));
 
         std::cout << "Starting backup" << std::endl;
@@ -468,8 +506,6 @@ void createConnectionToMainServer(char *name, int port, int port_main) {
         }
     }
 
-    //sock->closeSocket();
-
     // starts threads for clients
     for(auto sess: getBackupClientSessions()){
         std::vector<std::string> spMessage = sock->splitUpToMessage(sess, 3);
@@ -499,6 +535,14 @@ void startElection(std::shared_ptr<Socket> sock) {
 
     // tries to send the previous coordinator a message
     sock->send(Socket::ALIVE + " " + Socket::ALIVE + " " + "ALIVE", getMainServer());
+    // waits for coordinator message
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    // if isnt coordinator end election (received message from main server)
+    if(!isCoordinator()){
+        setElectionOver(true);
+        return;
+    }
+
 
     // sends other servers (with id > current id) an ELECTION message
     for (Server *server : getBackupServers()) {
