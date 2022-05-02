@@ -19,6 +19,8 @@ void BackupConnection::send(){
     ss << std::this_thread::get_id();
     send_id = ss.str();
     std::cout << "start thread send backup: " << send_id << std::endl;
+
+    // sends backup server message confirming connection
     sock.send(Socket::CONNECT_SERVER_OK + " " + std::to_string(id));
 
     while(1){
@@ -52,8 +54,10 @@ void BackupConnection::listen(){
         std::string type = spMessage[0];
         
         if(type == Socket::ALIVE){
+            // backup server checking if main server is alive
            server->addMsg(Message(Socket::ALIVE, "Alive"));
         } else if(type == Socket::SERVER_ACK){
+            // backup server confirming a message was received
             int id = stoi(spMessage[1]);
 
             auto count = getCounterFromMap(id);

@@ -20,7 +20,7 @@ const struct sockaddr_in &Server::getAddr(){
     return addr;
 }
 
-
+// adds message to backup server queue
 void Server::addMsg(Message msg){
     msgs_mtx.lock();
     msgs.push(msg);
@@ -28,6 +28,7 @@ void Server::addMsg(Message msg){
     msgs_mtx.unlock();
 }
 
+// pop message from queue
 Message Server::popMsg(){
     std::unique_lock<std::mutex> mlock(msgs_mtx);
 

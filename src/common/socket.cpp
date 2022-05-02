@@ -70,6 +70,7 @@ void Socket::closeSocket() {
     close(sockfd);
 }
 
+// returns current time
 std::string Socket::getTime(){
     auto receiveTime = std::chrono::system_clock::now();
     std::time_t rec_time = std::chrono::system_clock::to_time_t(receiveTime);
@@ -164,7 +165,7 @@ void Socket::setoth_addr(char *hostname, int port) {
     oth_addr = new_addr;
 }
 
-
+// creates sockaddr_in with hostname and port
 struct sockaddr_in Socket::create_addr(char *hostname, int port) {
     struct hostent *server = gethostbyname(hostname);
     struct sockaddr_in new_addr;
@@ -184,12 +185,14 @@ void Socket::setoth_addr(struct sockaddr_in new_addr) {
     oth_addr = new_addr;
 }
 
+// gets address string from sockaddr_in
 std::string Socket::get_addr_string(struct sockaddr_in addr) {
     char temp[256];
     getnameinfo((struct sockaddr *)&addr, sizeof addr, temp, 256, 0, 0, 0);
     return std::string(temp);
 }
 
+// gets address and port string from sockaddr_in
 std::string Socket::get_addr_port_string(struct sockaddr_in addr) {
     char temp[256];
     getnameinfo((struct sockaddr *)&addr, sizeof addr, temp, 256, 0, 0, 0);

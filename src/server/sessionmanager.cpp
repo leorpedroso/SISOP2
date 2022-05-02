@@ -32,19 +32,22 @@ void SessionManager::send(){
     ss << std::this_thread::get_id();
     send_id = ss.str();
     std::cout << "start thread send: " << send_id << std::endl;
-    {
+    
+    // sending connect to backup servers
     int temp_id = getGlobalMessageCount();
     std::shared_ptr<Counter> count(std::make_shared<Counter>(getNumberServers()));
     addCounterToMap(temp_id, count);
     addMessagetoServers(Message(Socket::CONNECT_OK, std::to_string(temp_id) + " " + getProfileName() + " " + getAddrString()));
 
+    // waiting for all backup servers to respond
     while(1){
         if(count->getValue() == 0){
+            count = nullptr;
             sock.send(Socket::CONNECT_OK + " " + send_id);
             break;
         }
     }
-    }
+    
 
     while(1){
         // If the session was closed, ends the send
@@ -144,10 +147,10 @@ void SessionManager::closeSession() {
 void SessionManager::sendAck(std::string msg) {
     std::unique_lock<std::mutex> lck(ack_mtx);
 
+    // sends ack to backup servers
     int id = getGlobalMessageCount();
     std::shared_ptr<Counter> count(std::make_shared<Counter>(getNumberServers()));
     addCounterToMap(id, count);
-
     addMessagetoServers(Message(Socket::ACK, std::to_string(id) + " " + getProfileName() + " " + msg));
 
     ack_msgs.push(Ack(msg, id, count));
@@ -161,6 +164,7 @@ void SessionManager::verifySendAck() {
     if (ack_cv.wait_for(lck, std::chrono::microseconds(2), [this]{return !ack_msgs.empty();}) == false)
         return;
     Ack msg = ack_msgs.front();
+    // checks if all backup servers already responded
     if(msg.getCount()->getValue() != 0){
         return;
     }

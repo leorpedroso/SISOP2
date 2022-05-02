@@ -25,7 +25,8 @@ void Profile::putNotification(const std::string &message, const std::string &sen
     notificationsMutex.lock();
 
     int id = getGlobalMessageCount();
-    // -1 forces the notification to be blocked until client is connected and the message will be send with readNotification
+    // -1 forces the notification to be blocked until client is connected 
+    // the message will be sent with readNotification
     std::shared_ptr<Counter> count(std::make_shared<Counter>(-1));
 
     addCounterToMap(id, count);
@@ -35,7 +36,10 @@ void Profile::putNotification(const std::string &message, const std::string &sen
     notificationsMutex.unlock();
 }
 
+// sends all information to backup servers
 void Profile::sendAllInfo(Server *server){
+
+    // sends open sessions
     sessionsMutex.lock();
 
     for(const std::string sess: sessionsAddrs){
@@ -45,7 +49,9 @@ void Profile::sendAllInfo(Server *server){
 
     sessionsMutex.unlock();
 
+    // sends pending notifications
     notificationsMutex.lock();
+
     std::queue<Notification> tempNotifications = notifications;
     
     while(!tempNotifications.empty()){
@@ -71,11 +77,12 @@ Notification Profile::readNotification(const std::string &id){
     Notification &notificationRef = notifications.front();
 
     if(notificationRef.getCount()->getValue() == -1){
-        // message will finally be sent, can be considered sent on the backup servers
+        // message will finally be sent (can be considered sent on the backup servers)
         notificationRef.getCount()->setValue(getNumberServers());
         addMessagetoServers(Message(Socket::NOTIFICATION, std::to_string(notificationRef.getID()) + " " + getName() + " " + notificationRef.getMessage()));
     }
 
+    // checks if all backup servers received the notification
     if(notificationRef.getCount()->getValue() != 0){
         return Notification("", "", "");
     }

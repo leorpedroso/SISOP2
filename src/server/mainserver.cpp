@@ -55,13 +55,16 @@ int main(int argc, char *argv[]) {
     printProfiles();
 
     if (argc == 7) {
+        // Backup server
         int port_main = atoi(argv[6]);
         int port_quart = atoi(argv[4]);
         createServerManager(false);
         createConnectionToMainServer(argv[5], port_quart, port_main);
     } else if(argc == 4){
+        // Primary server
         createServerManager(true);
     } else {
+        // Error
         std::cerr << "If primary server:" << std::endl;
         std::cerr << " " << argv[0] << " <porta_primaria> <porta_secundaria> <porta_terciaria>" << std::endl;
         std::cerr << "If backup server:" << std::endl;
@@ -98,9 +101,10 @@ int main(int argc, char *argv[]) {
             } else {
                 sock.send(sock.CONNECT_NOT_OK + " Profile already has 2 Sessions");
             }
-            // If it is not a valid type of message, returns an error
         } else if (type == Socket::CONNECT_SERVER) {
+            // New backup server
             addBackupServer(port_ter, sock.getoth_addr());
+        // If it is not a valid type of message, returns an error
         } else {
             std::cout << "ERROR MAIN THREAD" << message << std::endl;
         }
