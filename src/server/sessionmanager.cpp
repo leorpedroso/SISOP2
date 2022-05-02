@@ -16,7 +16,7 @@ SessionManager::SessionManager(int port, struct sockaddr_in addr, Profile *_prof
     sock.setConnect();
     profileName = prof->getName();
     addrString = Socket::get_addr_port_string(addr);
-    prof->incrementSessions();
+    prof->incrementSessions(getAddrString());
     session_closed = false;
     notif_counter = 0;    
 }
@@ -93,7 +93,7 @@ void SessionManager::listen(){
             std::string prof = spMessage[1];
             std::string sess = spMessage[2];
             closeSession();
-            getProfile(prof)->decrementSessions();
+            getProfile(prof)->decrementSessions(getAddrString());
             // getGlobalMessageCount because doesn't need a return
             addMessagetoServers(Message(Socket::EXIT, std::to_string(getGlobalMessageCount()) + " "  + getProfileName() + " " + getAddrString()));
             break;

@@ -3,6 +3,7 @@
 #include "../../include/server/servermanager.hpp"
 #include <iostream>
 #include <chrono>
+#include<algorithm>
 
 // Constant of maximum number of sessions that a client can have active 
 const int Profile::MAX_SESSIONS = 2;
@@ -34,8 +35,17 @@ void Profile::putNotification(const std::string &message, const std::string &sen
     notificationsMutex.unlock();
 }
 
-void Profile::sendAllNotifications(Server *server){
-    std::unique_lock<std::mutex> mlock(notificationsMutex);
+void Profile::sendAllInfo(Server *server){
+    sessionsMutex.lock();
+
+    for(const std::string sess: sessionsAddrs){
+        int temp_id = getGlobalMessageCount();
+        server->addMsg(Message(Socket::CONNECT_OK, std::to_string(temp_id) + " " + getName() + " " + sess));
+    }
+
+    sessionsMutex.unlock();
+
+    notificationsMutex.lock();
     std::queue<Notification> tempNotifications = notifications;
     
     while(!tempNotifications.empty()){
@@ -43,6 +53,7 @@ void Profile::sendAllNotifications(Server *server){
         server->addMsg(Message(Socket::ACK, std::to_string(notificationRef.getID()) + " " + getName() + " ADD_NOT " + notificationRef.getTime() + " " + notificationRef.getSender() + " " + notificationRef.getMessage()));
         tempNotifications.pop();
     }
+    notificationsMutex.unlock();
 }
 
 void Profile::popNotification(){
@@ -121,15 +132,17 @@ void Profile::notifyFollowers(const std::string &message, const std::string &tim
 }
 
 // Increases the profile's open sessions counter, uses mutex to avoid wrong data
-void Profile::incrementSessions(){
+void Profile::incrementSessions(const std::string &sess){
     sessionsMutex.lock();
+    sessionsAddrs.push_back(sess);
     ++numSessions;
     sessionsMutex.unlock();
 }
 
 // Decreases the profile's open sessions counter, uses mutex to avoid wrong data
-void Profile::decrementSessions(){
+void Profile::decrementSessions(const std::string &sess){
     sessionsMutex.lock();
+    sessionsAddrs.erase(std::remove(sessionsAddrs.begin(), sessionsAddrs.end(), sess), sessionsAddrs.end());
     --numSessions;
     sessionsMutex.unlock();
 }

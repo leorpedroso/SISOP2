@@ -159,7 +159,7 @@ void addBackupServer(int port, struct sockaddr_in addr) {
     int portServer = server->getPort();
     int id = _IDCounter;
 
-    sendPendingNotifications(server);
+    sendProfileInfo(server);
 
     for (Server *otherServer : _backupServers) {
         server->addMsg(Message(Socket::NEW_SERVER, std::to_string(otherServer->getID()) + " " + otherServer->getName() + " " + std::to_string(otherServer->getPort())));

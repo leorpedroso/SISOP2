@@ -16,10 +16,10 @@ void createProfileManager(const std::string &profileFile){
     loadProfiles();
 }
 
-void sendPendingNotifications(Server *server){
+void sendProfileInfo(Server *server){
     std::unique_lock<std::mutex> mlock(_profileMapMutex);
     for(auto &any: _profiles){
-        any.second->sendAllNotifications(server);
+        any.second->sendAllInfo(server);
     }
 }
 

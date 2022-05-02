@@ -30,6 +30,9 @@ class Profile{
         // number of sessions
         int numSessions;
 
+        // session addrs
+        std::vector<std::string> sessionsAddrs;
+
         // mutexes
         std::mutex notificationsMutex; // mutex for notification queue
         std::mutex sessionsMutex; // mutex for number of sessions
@@ -65,11 +68,11 @@ class Profile{
         bool addFollower(const std::string &follower, bool save = false);
         // adds a notification from this profile to its followers
         void notifyFollowers(const std::string &message, const std::string &time);
-        // sends all notifications to server
-        void sendAllNotifications(Server *server);
+        // sends all required information to server
+        void sendAllInfo(Server *server);
 
         // functions for changing number of sessions
-        void incrementSessions();
-        void decrementSessions();
+        void incrementSessions(const std::string &sess);
+        void decrementSessions(const std::string &sess);
         int getSessions();
 };
