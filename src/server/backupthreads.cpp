@@ -142,7 +142,7 @@ void addAlivetoMainServerQueue() {
 // adds ack message to msgs queue
 void addServerAcktoMainServerQueue(const std::string &id) {
     std::unique_lock<std::mutex> lck(_msgs_mtx);
-    _msgs.push(Message(id, ""));
+    _msgs.push(Message(Socket::ACK, id));
     _msgs_cv.notify_all();
 }
 
@@ -199,8 +199,8 @@ void createServerSendThread(std::shared_ptr<Socket> sock) {
         if (notification.getType() == Socket::ALIVE) {
             sock->send(Socket::ALIVE + " " + notification.getType() + " " + notification.getArgs(), getMainServer());
             setMainServerAliveSent(true);
-        } else {
-            sock->send(Socket::SERVER_ACK + " " + notification.getType() + " " + notification.getArgs(), getMainServer());
+        } else if (notification.getType() == Socket::ACK) {
+            sock->send(Socket::SERVER_ACK + " " + notification.getArgs(), getMainServer());
         }
     }
     std::cout << "end thread send main: " << send_id << std::endl;
