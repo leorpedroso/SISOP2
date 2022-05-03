@@ -35,7 +35,7 @@ std::mutex _globalMessageCountMutex;
 // adds counter to map
 void addCounterToMap(int id, std::shared_ptr<Counter> count){
     std::unique_lock<std::mutex> mlock(_counterMapMutex);
-    _counterMap.insert({id, count});
+    _counterMap[id] = count;
 }
 
 // returns counter from map
