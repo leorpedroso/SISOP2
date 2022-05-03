@@ -64,6 +64,8 @@ void Profile::sendAllInfo(Server *server){
 
 void Profile::popNotification(){
     std::unique_lock<std::mutex> mlock(notificationsMutex);
+    int id = notifications.front().getID();
+    removeCounterFromMap(id);
     notifications.pop();
 }
 
