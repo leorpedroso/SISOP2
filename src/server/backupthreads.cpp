@@ -460,28 +460,34 @@ void createConnectionToMainServer(char *name, int port, int port_main) {
     sock->setoth_addr(name, port_main);
     sock->send(Socket::CONNECT_SERVER + " " + std::to_string(port));
 
-    // Listen to server
-    std::string result = sock->listen();
-    std::string type = sock->getTypeMessage(result);
+    while(1){
+        // Listen to server
+        std::string result = sock->listen();
+        if (result=="")
+            continue;
 
-    // In case socket doesn't listen to a connection working, exit with error
-    // If the connection is working, process start message
-    if (type == Socket::CONNECT_NOT_OK) {
-        std::cerr << "ERROR " << result << std::endl;
-        exit(1);
-    } else if (type == Socket::CONNECT_SERVER_OK) {
-        std::vector<std::string> spMessage = sock->splitUpToMessage(result, 2);
-        if (spMessage.size() < 2) {
+        std::string type = sock->getTypeMessage(result);
+
+        // In case socket doesn't listen to a connection working, exit with error
+        // If the connection is working, process start message
+        if (type == Socket::CONNECT_NOT_OK) {
+            std::cerr << "ERROR " << result << std::endl;
+            exit(1);
+        } else if (type == Socket::CONNECT_SERVER_OK) {
+            std::vector<std::string> spMessage = sock->splitUpToMessage(result, 2);
+            if (spMessage.size() < 2) {
+                std::cout << "ERROR " << result << std::endl;
+                exit(1);
+            }
+            std::string idString = spMessage[1];
+            setServerIDAndCounter(stoi(idString));
+
+            std::cout << "Starting backup" << std::endl;
+            break;
+        } else {
             std::cout << "ERROR " << result << std::endl;
             exit(1);
         }
-        std::string idString = spMessage[1];
-        setServerIDAndCounter(stoi(idString));
-
-        std::cout << "Starting backup" << std::endl;
-    } else {
-        std::cout << "ERROR " << result << std::endl;
-        exit(1);
     }
 
     // sets main server
