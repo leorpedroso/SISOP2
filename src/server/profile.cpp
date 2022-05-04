@@ -81,7 +81,7 @@ Notification Profile::readNotification(const std::string &id){
     if(notificationRef.getCount()->getValue() == -1){
         // message will finally be sent (can be considered sent on the backup servers)
         notificationRef.getCount()->setValue(getNumberServers());
-        addMessagetoServers(Message(Socket::NOTIFICATION, std::to_string(notificationRef.getID()) + " " + getName() + " " + notificationRef.getMessage()));
+        addMessagetoServers(Message(Socket::NOTIFICATION, std::to_string(notificationRef.getID()) + " " + getName() + " " + notificationRef.getMessage()), notificationRef.getCount());
     }
 
     // checks if all backup servers received the notification

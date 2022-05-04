@@ -37,7 +37,7 @@ void SessionManager::send(){
     int temp_id = getGlobalMessageCount();
     std::shared_ptr<Counter> count(std::make_shared<Counter>(getNumberServers()));
     addCounterToMap(temp_id, count);
-    addMessagetoServers(Message(Socket::CONNECT_OK, std::to_string(temp_id) + " " + getProfileName() + " " + getAddrString()));
+    addMessagetoServers(Message(Socket::CONNECT_OK, std::to_string(temp_id) + " " + getProfileName() + " " + getAddrString()), count);
 
     // waiting for all backup servers to respond
     while(1){
@@ -98,7 +98,7 @@ void SessionManager::listen(){
             closeSession();
             getProfile(prof)->decrementSessions(getAddrString());
             // getGlobalMessageCount because doesn't need a return
-            addMessagetoServers(Message(Socket::EXIT, std::to_string(getGlobalMessageCount()) + " "  + getProfileName() + " " + getAddrString()));
+            addMessagetoServers(Message(Socket::EXIT, std::to_string(getGlobalMessageCount()) + " "  + getProfileName() + " " + getAddrString()), nullptr);
             break;
         // If the type is FOLLOW, adds the profile to the requested profile's followers if it exists. Sends and ACK with feedback from operation's output.
         } else if (type == Socket::FOLLOW){
@@ -151,7 +151,7 @@ void SessionManager::sendAck(std::string msg) {
     int id = getGlobalMessageCount();
     std::shared_ptr<Counter> count(std::make_shared<Counter>(getNumberServers()));
     addCounterToMap(id, count);
-    addMessagetoServers(Message(Socket::ACK, std::to_string(id) + " " + getProfileName() + " " + msg));
+    addMessagetoServers(Message(Socket::ACK, std::to_string(id) + " " + getProfileName() + " " + msg), count);
 
     ack_msgs.push(Ack(msg, id, count));
     ack_cv.notify_one();

@@ -90,33 +90,22 @@ void Interface::send(const std::string &message) {
 
 // Output for the user all its received notifications
 void Interface::updateNotifications(int given_counter, const std::string &notification){
-    int notif_counter_local = getNotifCounter();
-    if (notif_counter_local == given_counter) {
-        notif_buffer.insert(std::make_pair(notif_counter_local, notification));
-        std::unordered_map<int, std::string>::const_iterator next_notif = notif_buffer.find(notif_counter_local);        
+    std::unique_lock<std::mutex> mlock(notif_counter_mutex);
+    if (notif_counter == given_counter) {
+        notif_buffer[notif_counter] = notification;
+        std::unordered_map<int, std::string>::const_iterator next_notif = notif_buffer.find(notif_counter);        
         while (next_notif != notif_buffer.end()) {
             std::cout << next_notif->second << std::endl;
-            notif_buffer.erase(notif_counter_local);
-            incrementNotifCounter();
-            ++notif_counter_local;
-            next_notif = notif_buffer.find(notif_counter_local);
+            notif_buffer.erase(notif_counter);
+            ++notif_counter;
+            next_notif = notif_buffer.find(notif_counter);
         }
     } else {
-        notif_buffer.insert(std::make_pair(given_counter, notification));
+        notif_buffer[given_counter] = notification;
     }
 }
 
 void Interface::setNotifCounter(int val){
     std::unique_lock<std::mutex> mlock(notif_counter_mutex);
     notif_counter = val;
-}
-
-void Interface::incrementNotifCounter(){
-    std::unique_lock<std::mutex> mlock(notif_counter_mutex);
-    ++notif_counter;
-}
-
-int Interface::getNotifCounter(){
-    std::unique_lock<std::mutex> mlock(notif_counter_mutex);
-    return notif_counter; 
 }

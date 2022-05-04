@@ -6,6 +6,7 @@
 #include<memory>
 #include "server.hpp"
 #include "backupconnection.hpp"
+#include "counter.hpp"
 
 
 // functions for adding counters to map, removing counters, getting counters,
@@ -24,7 +25,7 @@ void setTercPort(int port);
 int getTercPort();
 
 // creates server manager
-void createServerManager(bool isPrimary);
+void createServerManager();
 
 // getter/setter for ID and counter
 void setServerIDAndCounter(int val);
@@ -34,7 +35,7 @@ int getServerID();
 void printServers();
 
 // adds message to all servers
-void addMessagetoServers(Message msg);
+void addMessagetoServers(Message msg, std::shared_ptr<Counter> count);
 
 // adds new backup server to backup servers
 void addServer(int id, const std::string &name, int port);

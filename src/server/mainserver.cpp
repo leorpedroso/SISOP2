@@ -52,17 +52,16 @@ int main(int argc, char *argv[]) {
 
     // Gets users from the save file
     createProfileManager(profileFile);
+    createServerManager();
     printProfiles();
 
     if (argc == 7) {
         // Backup server
         int port_main = atoi(argv[6]);
         int port_quart = atoi(argv[4]);
-        createServerManager(false);
         createConnectionToMainServer(argv[5], port_quart, port_main);
     } else if(argc == 4){
         // Primary server
-        createServerManager(true);
     } else {
         // Error
         std::cerr << "If primary server:" << std::endl;

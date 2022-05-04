@@ -13,8 +13,6 @@ int _serverID;
 std::mutex _serverIDMutex;
 // counter used to give ids to new servers
 int _IDCounter;
-// indicates if server is primary
-bool _isServerPrimary;
 // ports 
 int _secPort;
 int _tercPort;
@@ -75,8 +73,7 @@ void setGlobalMessageCount(int count){
 }
 
 // initializes server manager variables
-void createServerManager(bool isPrimary) {
-    _isServerPrimary = isPrimary;
+void createServerManager() {
     _globalMessageCount = 0;
     _serverID = 0;
 }
@@ -125,8 +122,11 @@ void printServers() {
 }
 
 // adds a message to all servers
-void addMessagetoServers(Message msg) {
+void addMessagetoServers(Message msg, std::shared_ptr<Counter> count) {
     _backupServersMutex.lock();
+
+    if(count != nullptr)
+        count->setValue(_backupServers.size());
 
     for (Server *server : _backupServers) {
         server->addMsg(msg);
@@ -138,8 +138,6 @@ void addMessagetoServers(Message msg) {
 // removes a backup server
 void removeFromBackupServers(int id) {
     _backupServersMutex.lock();
-
-    int pos = -1;
 
     for (auto i = _backupServers.begin(); i != _backupServers.end(); ++i) {
         if ((*i)->getID() == id) {
@@ -179,7 +177,7 @@ void addBackupServer(int port, struct sockaddr_in addr) {
     int portServer = server->getPort();
     int id = _IDCounter;
 
-    // sends all data to thew new server
+    // sends all data to the new server
     sendProfileInfo(server);
 
     // sends other servers a message indicating a new backup server

@@ -224,7 +224,7 @@ void AliveThread() {
 
     while (1) {
         // waits to verify if main server is currently alive
-        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
         if (getMainServerAlive()) {
             // if server is alive resets variables and adds alive to queue 
             setMainServerAlive(false);

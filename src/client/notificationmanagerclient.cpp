@@ -50,7 +50,7 @@ void NotificationManager::listen(){
                     std::cout << "ERROR " << input << std::endl; 
             }
         } else if (type == sock.CONNECT_NOT_OK){
-            std::cout << "ERROR " << input << std::endl;
+            std::cout << "Couldn't reconnect to server: " << input << std::endl;
             exit(1);
         } else if(type == sock.CONNECT_OK){
             std::vector<std::string> spMessage = sock.splitUpToMessage(input, 2);
@@ -58,7 +58,7 @@ void NotificationManager::listen(){
                 std::cout << "ERROR " << input << std::endl;
                 exit(1);
             }
-            std::cout << "NEW SERVER" << std::endl;
+            //DEBUG: std::cout << "NEW SERVER" << std::endl;
             // resets notification counter because a new session was started in a new server
             interface.setNotifCounter(0);
             // sets new addr
