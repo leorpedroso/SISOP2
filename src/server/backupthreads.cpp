@@ -371,6 +371,36 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
                 // ack to main server
                 addServerAcktoMainServerQueue(spMessage[0]);
 
+            } else if(type == Socket::PROFILE){
+                // Profile when a new backup server connects
+                spMessage = Socket::splitUpToMessage(spMessage[1], 2);
+                if (spMessage.size() < 2)
+                    continue;
+
+                // resyncs counter
+                setGlobalMessageCount(stoi(spMessage[0]));
+
+                // creates a profile if necessary
+                Profile *profTemp = getProfile(spMessage[1]);
+                if (profTemp == nullptr) {
+                    createProfile(spMessage[1], false);
+                }
+
+            } else if(type == Socket::FOLLOWER){
+                // Follower when a new backup server connects
+                spMessage = Socket::splitUpToMessage(spMessage[1], 3);
+                if (spMessage.size() < 3)
+                    continue;
+
+                // resyncs counter
+                setGlobalMessageCount(stoi(spMessage[0]));
+
+                // adds the follower to the profile
+                Profile *profTemp = getProfile(spMessage[1]);
+                std::string follower = spMessage[2];
+                if (profTemp != nullptr) {
+                    profTemp->addFollower(follower, false);
+                }
             } else if(type == Socket::CONNECT_OK){
                 // client connected to main server
 

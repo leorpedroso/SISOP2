@@ -10,6 +10,11 @@ std::string _profileFile;
 // Mutex for profiles map
 std::mutex _profileMapMutex;
 
+// sets profile file
+void setProfileFile(const std::string &profileFile){
+    _profileFile = profileFile;
+}
+
 // Initialize profiles manager and gets all the current profiles
 void createProfileManager(const std::string &profileFile){
     _profileFile = profileFile;

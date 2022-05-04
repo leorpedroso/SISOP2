@@ -8,6 +8,9 @@
 
 // Functions for managing profiles
 
+// sets profile file
+void setProfileFile(const std::string &profileFile);
+
 // creates profile manager
 void createProfileManager(const std::string &profileFile);
 
