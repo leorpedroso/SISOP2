@@ -38,21 +38,6 @@ void Profile::putNotification(const std::string &message, const std::string &sen
 
 // sends all information to backup servers
 void Profile::sendAllInfo(Server *server){
-    // sends name
-    int temp_id = getGlobalMessageCount();
-    server->addMsg(Message(Socket::PROFILE, std::to_string(temp_id) + " " + getName()));
-
-    // sends followers
-    followersMutex.lock();
-
-    for(const std::string fol: followers){
-        int temp_id = getGlobalMessageCount();
-        server->addMsg(Message(Socket::FOLLOWER, std::to_string(temp_id) + " " + getName() + " " + fol));        
-    }
-
-    followersMutex.unlock();
-
-
 
     // sends open sessions
     sessionsMutex.lock();

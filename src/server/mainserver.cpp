@@ -50,18 +50,18 @@ int main(int argc, char *argv[]) {
     setTercPort(port_ter);
     setSecPort(port_sec);
 
+    // Gets users from the save file
+    createProfileManager(profileFile);
     createServerManager();
+    printProfiles();
 
     if (argc == 7) {
         // Backup server
         int port_main = atoi(argv[6]);
         int port_quart = atoi(argv[4]);
-        setProfileFile(profileFile);
         createConnectionToMainServer(argv[5], port_quart, port_main);
     } else if(argc == 4){
         // Primary server
-        // Gets users from the save file
-        createProfileManager(profileFile);
     } else {
         // Error
         std::cerr << "If primary server:" << std::endl;
@@ -70,8 +70,6 @@ int main(int argc, char *argv[]) {
         std::cerr << " " << argv[0] << " <porta_primaria> <porta_secundaria> <porta_terciaria> <porta_quaternaria> <primary_name> <port_main>" << std::endl;
         exit(1);
     }
-
-    printProfiles();
 
     // Opens connection through socket
     Socket sock(port_prim);

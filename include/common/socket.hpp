@@ -46,8 +46,6 @@ class Socket {
     const static std::string ELECTION_ANSWER;      // 14
     const static std::string ELECTION_COORDINATOR; // 15
     const static std::string CONNECT_SERVER_OK;    // 16
-    const static std::string PROFILE;              // 17
-    const static std::string FOLLOWER;             // 18
 
     // max size for a socket message
     const static int MAX_MESSAGE_SIZE;
