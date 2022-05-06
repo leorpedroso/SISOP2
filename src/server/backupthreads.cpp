@@ -492,6 +492,7 @@ void createConnectionToMainServer(char *name, int port, int port_main) {
 
     // sets main server
     setMainServer(sock->getoth_addr());
+    sock->send(Socket::CONNECT_ACK + " ACK ACK", getMainServer());
 
     // inits listen thread
     createServerListenThread(sock);
@@ -540,7 +541,7 @@ void startElection(std::shared_ptr<Socket> sock) {
     std::cout << "Election started." << std::endl;
 
     // tries to send the previous coordinator a message
-    sock->send(Socket::ALIVE + " " + Socket::ALIVE + " " + "ALIVE", getMainServer());
+    sock->send(Socket::ALIVE + " " + Socket::ALIVE + " " + "Alive", getMainServer());
     // waits for coordinator message
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     // if isnt coordinator end election (received message from main server)

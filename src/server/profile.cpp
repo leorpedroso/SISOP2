@@ -44,7 +44,7 @@ void Profile::sendAllInfo(Server *server){
 
     for(const std::string sess: sessionsAddrs){
         int temp_id = getGlobalMessageCount();
-        std::shared_ptr<Counter> count(std::make_shared<Counter>(getNumberServers()));
+        std::shared_ptr<Counter> count(std::make_shared<Counter>(1));
         addCounterToMap(temp_id, count);
         server->addMsg(Message(Socket::CONNECT_OK, std::to_string(temp_id) + " " + getName() + " " + sess), count);
     }
@@ -58,7 +58,10 @@ void Profile::sendAllInfo(Server *server){
     
     while(!tempNotifications.empty()){
         Notification &notificationRef = tempNotifications.front();
-        server->addMsg(Message(Socket::ACK, std::to_string(notificationRef.getID()) + " " + getName() + " ADD_NOT " + notificationRef.getTime() + " " + notificationRef.getSender() + " " + notificationRef.getMessage()), notificationRef.getCount());
+        int temp_id = getGlobalMessageCount();
+        std::shared_ptr<Counter> count(std::make_shared<Counter>(1));
+        addCounterToMap(temp_id, count);
+        server->addMsg(Message(Socket::ACK, std::to_string(temp_id) + " " + getName() + " ADD_NOT " + notificationRef.getTime() + " " + notificationRef.getSender() + " " + notificationRef.getMessage()), count);
         tempNotifications.pop();
     }
     notificationsMutex.unlock();

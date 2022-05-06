@@ -5,6 +5,7 @@
 #include<iostream>
 
 BackupConnection::BackupConnection(int port, struct sockaddr_in addr, int id, Server *server): sock(port, true), id(id), server(server) {
+    connectAck = false;
     sock.setoth_addr(addr);
     sock.setConnect();
 }
@@ -24,6 +25,9 @@ void BackupConnection::send(){
     sock.send(Socket::CONNECT_SERVER_OK + " " + std::to_string(id));
 
     while(1){
+
+        if(!getConnectAck()) continue;
+
         Message notification = server->popMsg();
         // If it is empty, keep waiting for new messages
         if(notification.getType() == "")
@@ -67,7 +71,20 @@ void BackupConnection::listen(){
                     removeCounterFromMap(id);
                 }
             }
+            // Ack for client connect
+        } else if(type == Socket::CONNECT_ACK){
+            setConnectAck(true);
         }
     }
     std::cout << "end thread listen backup: " << listen_id << std::endl;
+}
+
+// getter/setter for ack from client
+bool BackupConnection::getConnectAck(){
+    std::unique_lock<std::mutex> mlock(connectAckMutex);
+    return connectAck;
+}
+void BackupConnection::setConnectAck(bool val){
+    std::unique_lock<std::mutex> mlock(connectAckMutex);
+    connectAck = val;
 }

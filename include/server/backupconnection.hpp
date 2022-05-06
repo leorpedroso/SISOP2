@@ -32,6 +32,14 @@ class BackupConnection{
 
         int notif_counter; // seqn for notifications
 
+        // connect ack and mutex
+        bool connectAck; 
+        std::mutex connectAckMutex;
+
+        // getter/setter for ack from backup
+        bool getConnectAck();
+        void setConnectAck(bool val);
+
     public:
         BackupConnection(int port, struct sockaddr_in addr, int id, Server *server);
         ~BackupConnection();

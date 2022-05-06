@@ -69,16 +69,16 @@ class SessionManager{
         const std::string &getAddrString();
         const std::string &getProfileName();
 
+        // getter/setter for ack from client
+        bool getConnectAck();
+        void setConnectAck(bool val);
+
     public:
         SessionManager(int port, struct sockaddr_in addr, Profile *_prof);
         ~SessionManager();
 
         // send loop
         void send();
-
-        // getter/setter for ack from client
-        bool getConnectAck();
-        void setConnectAck(bool val);
 
         // listen loop
         void listen();
