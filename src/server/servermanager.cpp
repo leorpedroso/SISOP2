@@ -30,6 +30,9 @@ std::mutex _counterMapMutex;
 int _globalMessageCount;
 std::mutex _globalMessageCountMutex;
 
+// mutex for messages that require order
+std::mutex _messageOrderMutex;
+
 // adds counter to map
 void addCounterToMap(int id, std::shared_ptr<Counter> count){
     std::unique_lock<std::mutex> mlock(_counterMapMutex);
@@ -69,7 +72,8 @@ int getGlobalMessageCount(){
 // used to resync counter value from backup servers
 void setGlobalMessageCount(int count){
     std::unique_lock<std::mutex> mlock(_globalMessageCountMutex);
-    _globalMessageCount = count;
+
+    _globalMessageCount = std::max(_globalMessageCount, count);
 }
 
 // initializes server manager variables
@@ -115,7 +119,7 @@ void printServers() {
     _backupServersMutex.lock();
 
     for (Server *server : _backupServers) {
-        std::cout << "NAME: " << server->getName() << " ID: " << server->getID() << std::endl;
+        std::cout << "NAME: " << server->getName() << " ID: " << server->getID() << " PORT" << server->getPort() << std::endl;
     }
 
     _backupServersMutex.unlock();
@@ -129,7 +133,7 @@ void addMessagetoServers(Message msg, std::shared_ptr<Counter> count) {
         count->setValue(_backupServers.size());
 
     for (Server *server : _backupServers) {
-        server->addMsg(msg);
+        server->addMsg(msg, count);
     }
 
     _backupServersMutex.unlock();
@@ -169,6 +173,7 @@ std::vector<Server *> getBackupServers() {
 // adds new backup server
 void addBackupServer(int port, struct sockaddr_in addr) {
     _backupServersMutex.lock();
+    _messageOrderMutex.lock();
 
     // creates server
     Server *server = new Server(addr, ++_IDCounter);
@@ -183,12 +188,13 @@ void addBackupServer(int port, struct sockaddr_in addr) {
     // sends other servers a message indicating a new backup server
     // sends new server messages with all previous servers
     for (Server *otherServer : _backupServers) {
-        server->addMsg(Message(Socket::NEW_SERVER, std::to_string(otherServer->getID()) + " " + otherServer->getName() + " " + std::to_string(otherServer->getPort())));
-        otherServer->addMsg(Message(Socket::NEW_SERVER, std::to_string(id) + " " + name + " " + std::to_string(portServer)));
+        server->addMsg(Message(Socket::NEW_SERVER, std::to_string(otherServer->getID()) + " " + otherServer->getName() + " " + std::to_string(otherServer->getPort())), nullptr);
+        otherServer->addMsg(Message(Socket::NEW_SERVER, std::to_string(id) + " " + name + " " + std::to_string(portServer)), nullptr);
     }
 
     _backupServers.push_back(server);
 
+    _messageOrderMutex.unlock();
     _backupServersMutex.unlock();
     // starts threads
     startBackupThreads(addr, port, id, server);

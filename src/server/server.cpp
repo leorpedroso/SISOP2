@@ -21,9 +21,10 @@ const struct sockaddr_in &Server::getAddr(){
 }
 
 // adds message to backup server queue
-void Server::addMsg(Message msg){
+void Server::addMsg(Message msg, std::shared_ptr<Counter> counter){
     msgs_mtx.lock();
     msgs.push(msg);
+    msgs_counters.push(counter);
     msgs_cv.notify_all();
     msgs_mtx.unlock();
 }
@@ -35,8 +36,24 @@ Message Server::popMsg(){
     if (msgs_cv.wait_for(mlock, std::chrono::microseconds(2), [this]{return !msgs.empty();}) == false)
         return Message("",""); 
 
+    // no counters currently
+    if(msgs_counters_send.empty()){
+        // nothing to do 
+    // current counter is nullptr
+    } else if(msgs_counters_send.front() == nullptr){
+        msgs_counters_send.pop();
+    // current counter did not receive acks
+    } else if (msgs_counters_send.front()->getValue() != 0){
+        return Message("",""); 
+    // current counter received acks
+    } else {
+        msgs_counters_send.pop();
+    }
+
     Message msg = msgs.front();
     msgs.pop();
+    msgs_counters_send.push(msgs_counters.front());
+    msgs_counters.pop();
 
     return msg;
 }

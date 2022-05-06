@@ -4,6 +4,8 @@
 #include"../common/socket.hpp"
 #include<queue>
 #include"message.hpp"
+#include<memory>
+#include"counter.hpp"
 #include<condition_variable>
 #include<mutex>
 
@@ -25,6 +27,8 @@ class Server{
         std::mutex addr_mtx;
 
         std::queue<Message> msgs; // queue for update messages
+        std::queue<std::shared_ptr<Counter>> msgs_counters;
+        std::queue<std::shared_ptr<Counter>> msgs_counters_send;
 
     public:
         Server(struct sockaddr_in addr, int ID): addr(addr), name(Socket::get_addr_string(addr)), ID(ID), port(ntohs(addr.sin_port)) {}
@@ -37,7 +41,7 @@ class Server{
         const struct sockaddr_in &getAddr();   
 
         // add message to server queue
-        void addMsg(Message msg);
+        void addMsg(Message msg, std::shared_ptr<Counter> counter);
         // pop message from queue
         Message popMsg();
 };

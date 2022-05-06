@@ -8,6 +8,8 @@
 #include "backupconnection.hpp"
 #include "counter.hpp"
 
+// mutex for messages that require order
+extern std::mutex _messageOrderMutex;
 
 // functions for adding counters to map, removing counters, getting counters,
 void addCounterToMap(int id, std::shared_ptr<Counter> count);

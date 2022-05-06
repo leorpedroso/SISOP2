@@ -29,6 +29,7 @@ const std::string Socket::ELECTION_START = "13";
 const std::string Socket::ELECTION_ANSWER = "14";
 const std::string Socket::ELECTION_COORDINATOR = "15";
 const std::string Socket::CONNECT_SERVER_OK = "16";
+const std::string Socket::CONNECT_ACK = "17";
 const int Socket::MAX_MESSAGE_SIZE = 256;
 
 // Opens socket connection that will be used between server and client

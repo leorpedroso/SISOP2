@@ -12,6 +12,7 @@
 
 // Handle session from each client from their profiles
 SessionManager::SessionManager(int port, struct sockaddr_in addr, Profile *_prof): prof(_prof), sock(port, true), addr(addr){
+    connectAck = false;
     sock.setoth_addr(addr);
     sock.setConnect();
     profileName = prof->getName();
@@ -33,11 +34,13 @@ void SessionManager::send(){
     send_id = ss.str();
     std::cout << "start thread send: " << send_id << std::endl;
     
+    _messageOrderMutex.lock();
     // sending connect to backup servers
     int temp_id = getGlobalMessageCount();
     std::shared_ptr<Counter> count(std::make_shared<Counter>(getNumberServers()));
     addCounterToMap(temp_id, count);
     addMessagetoServers(Message(Socket::CONNECT_OK, std::to_string(temp_id) + " " + getProfileName() + " " + getAddrString()), count);
+    _messageOrderMutex.unlock();
 
     // waiting for all backup servers to respond
     while(1){
@@ -51,6 +54,7 @@ void SessionManager::send(){
 
     while(1){
         // If the session was closed, ends the send
+        if(!getConnectAck()) continue;
         if (sessionClosed()) break;
         verifySendAck();
 
@@ -90,6 +94,8 @@ void SessionManager::listen(){
             continue;
         std::string type = spMessage[0];
 
+        _messageOrderMutex.lock();
+
         // If the type is EXIT, close the client session 
         if (type == Socket::EXIT){
             std::cout<< "thread: " << listen_id  << " EXIT" << std::endl;
@@ -97,8 +103,12 @@ void SessionManager::listen(){
             std::string sess = spMessage[2];
             closeSession();
             getProfile(prof)->decrementSessions(getAddrString());
-            // getGlobalMessageCount because doesn't need a return
-            addMessagetoServers(Message(Socket::EXIT, std::to_string(getGlobalMessageCount()) + " "  + getProfileName() + " " + getAddrString()), nullptr);
+            
+            int temp_id = getGlobalMessageCount();
+            std::shared_ptr<Counter> count(std::make_shared<Counter>(getNumberServers()));
+            addCounterToMap(temp_id, count);
+            addMessagetoServers(Message(Socket::EXIT, std::to_string(temp_id) + " "  + getProfileName() + " " + getAddrString()), count);
+            _messageOrderMutex.unlock();
             break;
         // If the type is FOLLOW, adds the profile to the requested profile's followers if it exists. Sends and ACK with feedback from operation's output.
         } else if (type == Socket::FOLLOW){
@@ -122,10 +132,15 @@ void SessionManager::listen(){
             std::string msg = spMessage[2];
             getProfile(prof)->notifyFollowers(msg, receiveTimeString);
             sendAck("SEND " + receiveTimeString + " " + msg);
+        // Ack for client connect
+        } else if(type == Socket::CONNECT_ACK){
+            setConnectAck(true);
         // If the type isn't recognized, outputs an error message
         } else {
             std::cout<< "thread: " << listen_id << " ERROR " + message << std::endl;
         }
+
+        _messageOrderMutex.unlock();
     }
     std::cout << "end thread listen: " << listen_id << std::endl;
 }
@@ -190,4 +205,14 @@ std::string SessionManager::getTime() {
     std::stringstream bufferTime;
     bufferTime << std::put_time(std::localtime(&rec_time), "%d/%b/%Y-%H:%M:%S");
     return bufferTime.str();
+}
+
+// getter/setter for ack from client
+bool SessionManager::getConnectAck(){
+    std::unique_lock<std::mutex> mlock(connectAckMutex);
+    return connectAck;
+}
+void SessionManager::setConnectAck(bool val){
+    std::unique_lock<std::mutex> mlock(connectAckMutex);
+    connectAck = val;
 }

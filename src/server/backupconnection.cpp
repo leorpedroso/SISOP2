@@ -55,7 +55,7 @@ void BackupConnection::listen(){
         
         if(type == Socket::ALIVE){
             // backup server checking if main server is alive
-           server->addMsg(Message(Socket::ALIVE, "Alive"));
+            server->addMsg(Message(Socket::ALIVE, "Alive"), nullptr);
         } else if(type == Socket::SERVER_ACK){
             // backup server confirming a message was received
             int id = stoi(spMessage[1]);

@@ -46,6 +46,10 @@ class SessionManager{
 
         int notif_counter; // seqn for notifications
 
+        // connect ack and mutex
+        bool connectAck; 
+        std::mutex connectAckMutex;
+
         // checks if a sessions is closed
         bool sessionClosed();
 
@@ -71,6 +75,10 @@ class SessionManager{
 
         // send loop
         void send();
+
+        // getter/setter for ack from client
+        bool getConnectAck();
+        void setConnectAck(bool val);
 
         // listen loop
         void listen();

@@ -116,6 +116,7 @@ int main(int argc, char*argv[]) {
             id = sock.splitUpToMessage(result, 2)[1];
 
             std::cout << "Starting client" << std::endl;
+            sock.send(sock.CONNECT_ACK + " ACK ACK", getAddr());
             break;
         } else {
             std::cout << "ERROR " << result << std::endl;

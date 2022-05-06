@@ -44,7 +44,9 @@ void Profile::sendAllInfo(Server *server){
 
     for(const std::string sess: sessionsAddrs){
         int temp_id = getGlobalMessageCount();
-        server->addMsg(Message(Socket::CONNECT_OK, std::to_string(temp_id) + " " + getName() + " " + sess));
+        std::shared_ptr<Counter> count(std::make_shared<Counter>(getNumberServers()));
+        addCounterToMap(temp_id, count);
+        server->addMsg(Message(Socket::CONNECT_OK, std::to_string(temp_id) + " " + getName() + " " + sess), count);
     }
 
     sessionsMutex.unlock();
@@ -56,7 +58,7 @@ void Profile::sendAllInfo(Server *server){
     
     while(!tempNotifications.empty()){
         Notification &notificationRef = tempNotifications.front();
-        server->addMsg(Message(Socket::ACK, std::to_string(notificationRef.getID()) + " " + getName() + " ADD_NOT " + notificationRef.getTime() + " " + notificationRef.getSender() + " " + notificationRef.getMessage()));
+        server->addMsg(Message(Socket::ACK, std::to_string(notificationRef.getID()) + " " + getName() + " ADD_NOT " + notificationRef.getTime() + " " + notificationRef.getSender() + " " + notificationRef.getMessage()), notificationRef.getCount());
         tempNotifications.pop();
     }
     notificationsMutex.unlock();
@@ -80,8 +82,10 @@ Notification Profile::readNotification(const std::string &id){
 
     if(notificationRef.getCount()->getValue() == -1){
         // message will finally be sent (can be considered sent on the backup servers)
+        _messageOrderMutex.lock();
         notificationRef.getCount()->setValue(getNumberServers());
         addMessagetoServers(Message(Socket::NOTIFICATION, std::to_string(notificationRef.getID()) + " " + getName() + " " + notificationRef.getMessage()), notificationRef.getCount());
+        _messageOrderMutex.unlock();
     }
 
     // checks if all backup servers received the notification

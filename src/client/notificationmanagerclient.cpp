@@ -63,6 +63,7 @@ void NotificationManager::listen(){
             interface.setNotifCounter(0);
             // sets new addr
             setAddr(sock.getoth_addr());
+            sock.send(sock.CONNECT_ACK + " ACK ACK", getAddr());
 
             // id = sock.splitUpToMessage(result, 2)[1];
 
