@@ -139,14 +139,15 @@ void addMessagetoServers(Message msg, std::shared_ptr<Counter> count) {
     _backupServersMutex.unlock();
 }
 
-// removes a backup server
+// removes backup serververs with ids >= argument
 void removeFromBackupServers(int id) {
     _backupServersMutex.lock();
 
-    for (auto i = _backupServers.begin(); i != _backupServers.end(); ++i) {
-        if ((*i)->getID() == id) {
-            _backupServers.erase(i);
-            break;
+    for (auto i = _backupServers.begin(); i != _backupServers.end(); ) {
+        if ((*i)->getID() >= id) {
+            i = _backupServers.erase(i);
+        } else {
+            ++i;
         }
     }
 

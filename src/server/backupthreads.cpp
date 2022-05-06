@@ -32,6 +32,10 @@ std::mutex _MainServerMutex;
 std::unordered_set<std::string> _backupClientSessions;
 std::mutex _backupClientSessionsMutex;
 
+// backup server is connected to main server
+bool _isConnected;
+std::mutex _isConnectedMutex;
+
 // queue for messages
 std::queue<Message> _msgs;
 std::mutex _msgs_mtx;             // mutex for _msgs queue
@@ -84,6 +88,16 @@ void setElectionOver(bool newVal) {
 bool isElectionOver() {
     std::unique_lock<std::mutex> mlock(_isElectionOverMutex);
     return _isElectionOver;
+}
+
+// setter/getter for _isConnected
+void setConnected(bool newVal) {
+    std::unique_lock<std::mutex> mlock(_isConnectedMutex);
+    _isConnected = newVal;
+}
+bool isConnected() {
+    std::unique_lock<std::mutex> mlock(_isConnectedMutex);
+    return _isConnected;
 }
 
 // setter/getter for _isCoordinator
@@ -139,6 +153,12 @@ void addAlivetoMainServerQueue() {
     _msgs_cv.notify_all();
 }
 
+void addConnectAcktoMainServerQueue(){
+    std::unique_lock<std::mutex> lck(_msgs_mtx);
+    _msgs.push(Message(Socket::CONNECT_ACK, "ACK ACK"));
+    _msgs_cv.notify_all();
+}
+
 // adds ack message to msgs queue
 void addServerAcktoMainServerQueue(const std::string &id) {
     std::unique_lock<std::mutex> lck(_msgs_mtx);
@@ -186,6 +206,9 @@ void createServerSendThread(std::shared_ptr<Socket> sock) {
         // If the session was closed, ends the send
         if (serverSessionClosed())
             break;
+        // if isnt able to send messages to main server yet
+        if(!isConnected())
+            continue;
 
         std::unique_lock<std::mutex> lck(_msgs_mtx);
         if (_msgs_cv.wait_for(lck, std::chrono::microseconds(2), [] { return !_msgs.empty(); }) == false)
@@ -201,6 +224,8 @@ void createServerSendThread(std::shared_ptr<Socket> sock) {
             setMainServerAliveSent(true);
         } else if (notification.getType() == Socket::ACK) {
             sock->send(Socket::SERVER_ACK + " " + notification.getArgs(), getMainServer());
+        } else if (notification.getType() == Socket::CONNECT_ACK) {
+            sock->send(Socket::CONNECT_ACK + " " + notification.getArgs(), getMainServer());
         }
     }
     std::cout << "end thread send main: " << send_id << std::endl;
@@ -225,7 +250,9 @@ void AliveThread() {
     while (1) {
         // waits to verify if main server is currently alive
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-        if (getMainServerAlive()) {
+        if(!isConnected()){
+            continue;
+        } else if (getMainServerAlive()) {
             // if server is alive resets variables and adds alive to queue 
             setMainServerAlive(false);
             setMainServerAliveSent(false);
@@ -235,6 +262,7 @@ void AliveThread() {
             break;
         }
     }
+    setConnected(false);
     closeServerSession();
 
     std::cout << "end thread alive main: " << alive_id << std::endl;
@@ -292,6 +320,7 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
                 // ack from main server
                 setMainServerAlive(true);
                 setCoordinator(false);
+                setConnected(true);
             } else if (type == Socket::ACK){
                 // Ack sent to client
 
@@ -435,10 +464,12 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
 
             // set coordinator and new main server
             setCoordinator(false);
-            setMainServer(sock->getoth_addr(), coordPort);
             removeFromBackupServers(coordId);
         } else if (type == Socket::CONNECT_SERVER_OK){
-            //doesn't need to do anything 
+            // connected to main server
+            setMainServer(sock->getoth_addr());
+            addConnectAcktoMainServerQueue();
+            setConnected(true);
         } else {
             // ERROR
             std::cout << "ERROR " << message << std::endl;
@@ -493,6 +524,7 @@ void createConnectionToMainServer(char *name, int port, int port_main) {
     // sets main server
     setMainServer(sock->getoth_addr());
     sock->send(Socket::CONNECT_ACK + " ACK ACK", getMainServer());
+    setConnected(true);
 
     // inits listen thread
     createServerListenThread(sock);
@@ -512,6 +544,9 @@ void createConnectionToMainServer(char *name, int port, int port_main) {
             break;
         }
     }
+
+    // remove all servers with ids > current server id
+    removeFromBackupServers(getServerID() + 1);
 
     // starts threads for clients
     for(auto sess: getBackupClientSessions()){

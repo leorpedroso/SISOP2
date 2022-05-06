@@ -71,7 +71,7 @@ void BackupConnection::listen(){
                     removeCounterFromMap(id);
                 }
             }
-            // Ack for client connect
+            // Ack for server connect
         } else if(type == Socket::CONNECT_ACK){
             setConnectAck(true);
         }
