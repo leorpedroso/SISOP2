@@ -80,6 +80,7 @@ void setGlobalMessageCount(int count){
 void createServerManager() {
     _globalMessageCount = 0;
     _serverID = 0;
+    _IDCounter = 0;
 }
 
 // setters/getters for ports

@@ -247,11 +247,17 @@ void AliveThread() {
     setMainServerAliveSent(false);
 
 
+    // number of times it will loop if it isnt connected before sending first alive
+    int connectTries = 5;
+
     while (1) {
         // waits to verify if main server is currently alive
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-        if(!isConnected()){
-            continue;
+        if(!isConnected() && connectTries > 0){
+            --connectTries;
+            if(connectTries == 0) {
+                break;
+            }
         } else if (getMainServerAlive()) {
             // if server is alive resets variables and adds alive to queue 
             setMainServerAlive(false);
@@ -449,8 +455,11 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
                         Socket::create_addr((char *)server->getName().c_str(), server->getPort()));
                 }
             }
-            // closes session to send ELECTION messages to other servers
-            closeServerSession();
+
+            if(isElectionOver()){
+                // closes session to send ELECTION messages to other servers
+                closeServerSession();
+            }
         } else if (type == Socket::ELECTION_ANSWER) {
             // if received an ANSWER it isn't the coordiantor
             setCoordinator(false);
@@ -464,6 +473,7 @@ void serverListenThread(std::shared_ptr<Socket> sock) {
 
             // set coordinator and new main server
             setCoordinator(false);
+            setMainServer(sock->getoth_addr(), coordPort);
             removeFromBackupServers(coordId);
         } else if (type == Socket::CONNECT_SERVER_OK){
             // connected to main server
